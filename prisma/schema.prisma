@@ -18,12 +18,15 @@ enum Role{
   ADMIN
   USER
 }
+
+
 model user{ 
-  email String @id
+  id        Int     @id @default(autoincrement())
+  email String 
   password String 
   role  Role @default(USER)
-  name String 
-  surname String 
+  name String? 
+  surname String?
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
 }
