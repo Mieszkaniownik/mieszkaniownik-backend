@@ -7,6 +7,7 @@ import { Offer } from '@prisma/client';
 import { DatabaseService } from '../database/database.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
+import { link } from 'fs';
 
 @Injectable()
 export class OfferService {
@@ -14,6 +15,19 @@ export class OfferService {
 
   async findAll(): Promise<Offer[]> {
     return this.database.offer.findMany();
+  }
+
+  
+  async findOneOrCreate(createOfferDto: CreateOfferDto){
+    const myOffer = this.database.offer.findUnique({where: {link}});
+    if (myOffer == null)
+    {
+      return this.create(createOfferDto);
+    }
+    else
+    {
+      return this.update(myOffer.id, createOfferDto as UpdateOfferDto)
+    }
   }
 
   async findOne(id: number): Promise<Offer> {
