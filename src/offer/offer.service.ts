@@ -19,14 +19,17 @@ export class OfferService {
 
   
   async findOneOrCreate(createOfferDto: CreateOfferDto){
-    const myOffer = this.database.offer.findUnique({where: {link}});
-    if (myOffer == null)
-    {
-      return this.create(createOfferDto);
-    }
-    else
-    {
-      return this.update(myOffer.id, createOfferDto as UpdateOfferDto)
+    const link= createOfferDto.link; 
+    if(link){
+      const myOffer = await this.database.offer.findUnique({where: {link: link}});
+      if (myOffer == null)
+      {
+        return this.create(createOfferDto);
+      }
+      else
+      {
+        return this.update(myOffer.id, createOfferDto as UpdateOfferDto)
+      }
     }
   }
 

@@ -22,7 +22,7 @@ enum Listing_type{
 
 model User{ 
   id        Int     @id @default(autoincrement())
-  email String @unique
+  email String  @unique
   password String 
   role  Role @default(USER)
   isEnabled Boolean @default(true) 
@@ -33,16 +33,16 @@ model User{
   active Boolean
 }
 model Offer{ 
-  id Int @id
-  link String
+  id Int @id @default(autoincrement())
+  link String @unique
   price Float
   footage Int?
   rooms Int? 
-  added_at DateTime
-  udpated_at DateTime
+  added_at DateTime?
+  udpated_at DateTime?
   valid_to DateTime? 
-  city String
-  address String
+  city String?
+  address String?
   type Listing_type?
   furniture Boolean?
   negotiable Boolean? 
