@@ -4,10 +4,13 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Role, User } from "@prisma/client";
+import * as bcrypt from "bcrypt";
 
 import { DatabaseService } from "../database/database.service";
+import { CreateUserDto } from "./dto/create-user.dto";
 import { RegisterUserDto } from "./dto/register-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
+import { UserMetadata } from "./dto/user-metadata.dto";
 
 
 @Injectable()
@@ -26,7 +29,7 @@ export class UserService {
 
   async userAlreadyExist(email: string, login: string, age: number) {
     const found = await this.database.user.findUnique({
-      where: { email, name, surname },
+      where: { email },
     });
     if (found != null) {
       throw new ConflictException("User with that data allready exist");
@@ -36,15 +39,15 @@ export class UserService {
   async registerUser(registerUser: RegisterUserDto) {
     await this.userAlreadyExist(
       registerUser.email,
-      registerUser.name,
-      registerUser.surname,
+      registerUser.name || "",
+      0,
     );
     return this.database.user.create({
       data: {
         email: registerUser.email,
-        login: registerUser.name,
+        name: registerUser.name,
+        surname: registerUser.surname,
         password: registerUser.password,
-        age: registerUser.surname,
         isEnabled: true,
       },
     });
@@ -101,4 +104,51 @@ export class UserService {
     await this.findOneOrFail(email);
     return this.database.user.delete({ where: { email } });
   }
+
+  async findOneMetadata(email: string): Promise<UserMetadata> {
+    const user = await this.database.user.findUnique({
+      where: { email },
+    });
+    if (user == null) {
+      throw new NotFoundException(`User ${email} not found`);
+    }
+    return this.userToMetadata(user);
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const existingUser = await this.findOne(createUserDto.email);
+    if (existingUser) {
+      throw new ConflictException("User with this email already exists");
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    return this.database.user.create({
+      data: {
+        email: createUserDto.email,
+        name: createUserDto.name,
+        surname: createUserDto.surname,
+        password: hashedPassword,
+        role: Role.USER,
+        isEnabled: true,
+      },
+    });
+  }
+
+  async validatePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  private userToMetadata(user: User): UserMetadata {
+    return {
+      email: user.email,
+      name: user.name,
+      surname: user.surname,
+      role: user.role,
+      isEnabled: user.isEnabled,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+    };
+  }
+
 }
