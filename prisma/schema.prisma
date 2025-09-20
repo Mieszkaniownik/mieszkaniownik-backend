@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -18,12 +17,40 @@ enum Role{
   ADMIN
   USER
 }
+enum Listing_type{ 
+  APARTMENT
+  ROOM 
+  HOUSE 
+}
 model user{ 
   email String @id
   password String 
   role  Role @default(USER)
-  name String 
-  surname String 
+  name String? 
+  surname String? 
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
+  active Boolean
+}
+model offer{ 
+  id Int @id
+  link String
+  price Float
+  footage Int?
+  rooms Int? 
+  added_at DateTime
+  udpated_at DateTime
+  valid_to DateTime? 
+  city String
+  address String
+  type Listing_type?
+  furniture Boolean?
+  negotiable Boolean? 
+  pets_allowed Boolean? 
+  floor Int? 
+  elevator Boolean?   
+}
+model city{ 
+  id Int @id @default(autoincrement())
+  name String @unique
 }
