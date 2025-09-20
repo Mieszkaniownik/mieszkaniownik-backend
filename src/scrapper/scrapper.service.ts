@@ -1,8 +1,8 @@
 import axios from "axios";
 import { extract_data, OLXListing } from "./utils/OLX_listing";
+import { CronExpression } from "@nestjs/schedule";
 export class ScrapperService {
   private readonly apiUrl = 'https://www.olx.pl/apigateway/graphql';
-  
   private getHeaders() {
     return {
       'Accept': 'application/json',
@@ -107,6 +107,7 @@ export class ScrapperService {
         { key: "limit", value: limit.toString() },
         { key: "category_id", value: categoryId },
         { key: "filter_refiners", value: "spell_checker" },
+        { key: "sort_by", value: "created_at:desc" },
         ...(cityId ? [{ key: "city_id", value: cityId }] : []),
         ...(priceFrom ? [{ key: "filter_float_price:from", value: priceFrom }] : []),
         ...(priceTo ? [{ key: "filter_float_price:to", value: priceTo }] : []),
