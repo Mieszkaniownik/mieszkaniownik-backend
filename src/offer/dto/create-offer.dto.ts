@@ -101,7 +101,7 @@ Link: ${dto.link}
 Price: ${dto.price}
 Footage: ${dto.footage}
 Rooms: ${dto.rooms ?? 'N/A'}
-Added at: ${dto.added_at.toISOString()}
+Added at: ${dto.added_at?.toISOString() ?? 'N/A'}
 Updated at: ${dto.udpated_at?.toISOString() ?? 'N/A'}
 Valid to: ${dto.valid_to?.toISOString() ?? 'N/A'}
 City: ${dto.city}
