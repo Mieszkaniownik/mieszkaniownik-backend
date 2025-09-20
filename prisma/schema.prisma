@@ -6,12 +6,18 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+
+enum Listing_type{ 
+  APARTMENT
+  ROOM 
+  HOUSE 
 }
 
 model User{ 
@@ -24,7 +30,27 @@ model User{
   surname String?
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
+  active Boolean
 }
+model Offer{ 
+  id Int @id
+  link String
+  price Float
+  footage Int?
+  rooms Int? 
+  added_at DateTime
+  udpated_at DateTime
+  valid_to DateTime? 
+  city String
+  address String
+  type Listing_type?
+  furniture Boolean?
+  negotiable Boolean? 
+  pets_allowed Boolean? 
+  floor Int? 
+  elevator Boolean?   
+}
+
 
 
 
