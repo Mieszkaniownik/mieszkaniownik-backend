@@ -13,26 +13,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role{ 
-  ADMIN
-  USER
-}
+
 enum Listing_type{ 
   APARTMENT
   ROOM 
   HOUSE 
 }
-model user{ 
-  email String @id
+
+model User{ 
+  id        Int     @id @default(autoincrement())
+  email String 
   password String 
   role  Role @default(USER)
+  isEnabled Boolean @default(true) 
   name String? 
-  surname String? 
+  surname String?
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
   active Boolean
 }
-model offer{ 
+model Offer{ 
   id Int @id
   link String
   price Float
@@ -50,7 +50,12 @@ model offer{
   floor Int? 
   elevator Boolean?   
 }
-model city{ 
-  id Int @id @default(autoincrement())
-  name String @unique
+
+
+
+
+
+enum Role{ 
+  ADMIN
+  USER
 }
