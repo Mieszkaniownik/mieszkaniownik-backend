@@ -115,7 +115,7 @@ export class UserService {
     return this.userToMetadata(user);
   }
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto){
     const existingUser = await this.findOne(createUserDto.email);
     if (existingUser) {
       throw new ConflictException("User with this email already exists");
