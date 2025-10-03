@@ -30,7 +30,7 @@ model User{
   surname String?
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
-  active Boolean
+  active Boolean @default(true)
 }
 model Offer{ 
   id Int @id @default(autoincrement())
@@ -48,7 +48,10 @@ model Offer{
   negotiable Boolean? 
   pets_allowed Boolean? 
   floor Int? 
-  elevator Boolean?   
+  elevator Boolean?
+  additional_rent Int?      
+  building_type String?     
+  parking String?    
 }
 
 

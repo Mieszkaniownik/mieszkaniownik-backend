@@ -94,6 +94,24 @@ export class CreateOfferDto {
   @IsBoolean()
   @IsOptional()
   elevator?: boolean;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  additional_rent?: number; 
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  building_type?: string; 
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  parking?: string;
+
+
 }
 export function dto_toString(dto: CreateOfferDto): string {
   return `
