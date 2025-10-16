@@ -13,52 +13,224 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-enum Listing_type{ 
-  APARTMENT
-  ROOM 
-  HOUSE 
-}
-
-model User{ 
-  id        Int     @id @default(autoincrement())
-  email String  @unique
-  password String 
-  role  Role @default(USER)
-  isEnabled Boolean @default(true) 
-  name String? 
-  surname String?
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
-  active Boolean @default(true)
-}
-model Offer{ 
-  id Int @id @default(autoincrement())
-  link String @unique
-  price Float
-  footage Int?
-  rooms Int? 
-  added_at DateTime?
-  udpated_at DateTime?
-  valid_to DateTime? 
-  city String?
-  address String?
-  type Listing_type?
-  furniture Boolean?
-  negotiable Boolean? 
-  pets_allowed Boolean? 
-  floor Int? 
-  elevator Boolean?
-  additional_rent Int?      
-  building_type String?     
-  parking String?    
-}
-
-
-
-
-
-enum Role{ 
+enum Role {
   ADMIN
   USER
+  GUEST
+}
+
+enum AlertStatus {
+  ACTIVE
+  PAUSED
+  DELETED
+}
+
+enum NotificationMethod {
+  EMAIL
+  DISCORD
+  BOTH
+}
+
+enum OwnerType {
+  PRIVATE
+  COMPANY
+  ALL
+}
+
+enum BuildingType {
+  BLOCK_OF_FLATS
+  TENEMENT
+  DETACHED
+  TERRACED
+  APARTMENT
+  LOFT
+  OTHER
+}
+
+enum Floors {
+  BASEMENT
+  GROUND
+  ONE
+  TWO
+  THREE
+  FOUR
+  FIVE
+  SIX
+  SEVEN
+  EIGHT
+  NINE
+  TEN
+  TEN_AND_MORE
+  LOFT
+}
+
+enum Rooms {
+  STUDIO
+  ONE_ROOM
+  TWO_ROOMS
+  THREE_ROOMS
+  FOUR_AND_MORE
+}
+
+enum ParkingType {
+  NONE
+  STREET
+  SECURED
+  GARAGE
+  IDENTIFICATOR_FOR_PAID_PARKING
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  password  String?  @db.VarChar(255)
+  role      Role     @default(USER)
+  username  String?  @db.VarChar(255)
+  name      String?  @db.VarChar(100)
+  surname   String?  @db.VarChar(100)
+  phone     String?  @db.VarChar(25)
+  city      String?  @db.Text
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  lastLogin DateTime @default(now()) @db.Timestamptz
+  googleId  String?  @unique @db.VarChar(255)
+
+  alerts        Alert[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([active, role])
+  @@map("users")
+}
+
+model Offer {
+  id             Int           @id @default(autoincrement())
+  link           String        @unique @db.Text
+  title          String        @db.VarChar(200)
+  price          Decimal       @db.Decimal(10, 2)
+  city           String        @db.VarChar(100)
+  district       String?       @db.VarChar(100)
+  footage        Decimal?      @db.Decimal(10, 2)
+  description    String?       @db.Text
+  ownerType      OwnerType?
+  buildingType   BuildingType?
+  parkingType    ParkingType?
+  rooms          Int?          @db.Integer
+  floor          Int?          @db.Integer
+  elevator       Boolean?      @db.Boolean
+  furniture      Boolean?      @db.Boolean
+  pets           Boolean?      @db.Boolean
+  rentAdditional Decimal?      @db.Decimal(10, 2)
+  negotiable     Boolean?      @db.Boolean
+  contact        String?       @db.VarChar(300)
+  views          Int           @default(0) @db.Integer
+  createdAt      DateTime      @db.Timestamptz
+  updatedAt      DateTime      @updatedAt @db.Timestamptz
+  source         String        @db.VarChar(100)
+  available      Boolean       @default(true) @db.Boolean
+  isNew          Boolean       @default(false) @db.Boolean
+  summary        String?       @db.VarChar(500)
+  street         String?       @db.VarChar(200)
+  streetNumber   String?       @db.VarChar(20)
+  latitude       Decimal?      @db.Decimal(10, 7)
+  longitude      Decimal?      @db.Decimal(11, 7)
+
+  infoAdditional String? @db.Text
+  media          String? @db.Text
+  furnishing     String? @db.Text
+
+  images String[]
+
+  matches Match[]
+
+  @@index([city, district])
+  @@index([price, footage])
+  @@index([buildingType, city])
+  @@index([available, isNew])
+  @@index([source, createdAt])
+  @@index([latitude, longitude])
+  @@index([rooms, floor])
+  @@map("offers")
+}
+
+model Alert {
+  id                 Int                @id @default(autoincrement())
+  name               String             @db.VarChar(255)
+  city               String             @db.VarChar(100)
+  district           String?            @db.VarChar(100)
+  maxPrice           Decimal?           @db.Decimal(10, 2)
+  minPrice           Decimal?           @db.Decimal(10, 2)
+  maxFootage         Decimal?           @db.Decimal(10, 2)
+  minFootage         Decimal?           @db.Decimal(10, 2)
+  maxRooms           Int?               @db.Integer
+  minRooms           Int?               @db.Integer
+  maxFloor           Int?               @db.Integer
+  minFloor           Int?               @db.Integer
+  ownerType          OwnerType?
+  buildingType       BuildingType?
+  parkingType        ParkingType?
+  elevator           Boolean?
+  furniture          Boolean?
+  pets               Boolean?
+  keywords           String[]           @default([])
+  discordWebhook     String?            @db.Text
+  notificationMethod NotificationMethod @default(EMAIL)
+  status             AlertStatus        @default(ACTIVE)
+  createdAt          DateTime           @default(now()) @db.Timestamptz
+  updatedAt          DateTime           @updatedAt @db.Timestamptz
+  matchesCount       Int                @default(0) @db.Integer
+
+  userId Int
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matches       Match[]
+  notifications Notification[]
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([city, district])
+  @@map("alerts")
+}
+
+model Match {
+  id               Int      @id @default(autoincrement())
+  notificationSent Boolean  @default(false)
+  matchedAt        DateTime @default(now())
+
+  alertId Int
+  offerId Int
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([alertId, offerId])
+  @@index([alertId, matchedAt])
+  @@index([notificationSent])
+  @@index([offerId])
+  @@map("matches")
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  title     String             @db.VarChar(200)
+  method    NotificationMethod @default(EMAIL)
+  message   String             @db.Text
+  type      String             @db.VarChar(100)
+  sent      Boolean            @default(false)
+  sentAt    DateTime?          @db.Timestamptz
+  createdAt DateTime           @default(now()) @db.Timestamptz
+  updatedAt DateTime           @updatedAt @db.Timestamptz
+  error     String?            @db.Text
+
+  userId  Int
+  alertId Int?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alert Alert? @relation(fields: [alertId], references: [id], onDelete: SetNull)
+
+  @@index([userId, sent])
+  @@index([sent, createdAt])
+  @@index([alertId])
+  @@map("notifications")
 }

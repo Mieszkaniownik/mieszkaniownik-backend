@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mieszkaniownik-backend-only
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./prisma:/app/prisma
+    networks:
+      - mieszkaniownik-backend-net
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: mieszkaniownik-db-backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-mieszkaniownik}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_backend_data:/var/lib/postgresql/data
+    networks:
+      - mieszkaniownik-backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mieszkaniownik-redis-backend
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_backend_data:/data
+    networks:
+      - mieszkaniownik-backend-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_backend_data:
+  redis_backend_data:
+
+networks:
+  mieszkaniownik-backend-net:
+    driver: bridge
