@@ -1,85 +1,143 @@
+import { Role, User } from '@prisma/client';
+
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
-  Post,
+  Request,
   UseGuards,
-} from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Role, User } from "@prisma/client";
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
-import { AuthGuard } from "../auth/auth.guard";
-import { Roles } from "../auth/roles/role.decorator";
-import { RoleGuard } from "../auth/roles/role.guard";
-import { UpdateUserDto } from "./dto/update-user.dto";
-import { UserService } from "./user.service";
+import { AuthGuard } from '../auth/auth.guard';
+import { Roles } from '../auth/roles/role.decorator';
+import { RoleGuard } from '../auth/roles/role.guard';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
+import { UserService } from './user.service';
 
-@Controller("user")
-@ApiTags("user")
+@ApiTags('users')
+@Controller('users')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
-  @Patch("update/:email")
-  @ApiOperation({ summary: "Update a user by email" })
-  @ApiResponse({ status: 200, description: "User updated successfully" })
-  @ApiResponse({ status: 403, description: "Missing permission" })
-  @ApiResponse({ status: 404, description: "User not found" })
-  async update(
-    @Param("email") email: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.userService.updateUserData(email, updateUserDto);
+  @Get()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users retrieved successfully',
+  })
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  async findAll(): Promise<UserResponseDto[]> {
+    return this.userService.findAll();
   }
 
-  @ApiOperation({
-    summary: "Disable the given user account",
-  })
+  @Get(':email')
+  @ApiOperation({ summary: 'Get user' })
+  @ApiParam({ name: 'email', description: 'User email' })
   @ApiResponse({
-    status: 204,
-    description: "User disabled",
+    status: 200,
+    description: 'User retrieved successfully',
+  })
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async findOne(@Param('email') email: string): Promise<User | null> {
+    return this.userService.findOne(email);
+  }
+
+  @Patch(':email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated successfully',
   })
   @ApiResponse({
     status: 400,
-    description: "Cannot disable an admin account",
+    description: 'Bad request',
   })
   @ApiResponse({
     status: 403,
-    description: "Missing privileges",
-  })
-  @ApiResponse({
-    status: 404,
-    description: "User not found",
+    description: 'Forbidden action',
   })
   @UseGuards(AuthGuard, RoleGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Post("disable/:email")
-  @Roles(Role.ADMIN)
-  async disableUser(@Param("email") email: string) {
-    return this.userService.disableAccount(email);
+  @Roles(Role.ADMIN, Role.USER)
+  @ApiBearerAuth('access-token')
+  async update(
+    @Param('email') email: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() request: { user: { email: string; role: Role } },
+  ): Promise<UserResponseDto> {
+    return this.userService.update(email, updateUserDto, request.user);
   }
 
-  @ApiOperation({
-    summary: "Enable the given user account",
-  })
+  @Patch(':email/archive')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Archive user' })
   @ApiResponse({
-    status: 204,
-    description: "User enabled",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Missing privileges",
+    status: 200,
+    description: 'User archived successfully',
   })
   @ApiResponse({
     status: 404,
-    description: "User not found",
+    description: 'User not found',
   })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Post("enable/:email")
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.ADMIN)
-  async enableUser(@Param("email") email: string) {
-    return this.userService.enableAccount(email);
+  @ApiBearerAuth('access-token')
+  async deactivate(@Param('email') email: string): Promise<UserResponseDto> {
+    return this.userService.deactivate(email);
+  }
+
+  @Patch(':email/dearchive')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Dearchive user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User archived successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  async activate(@Param('email') email: string): Promise<UserResponseDto> {
+    return this.userService.activate(email);
+  }
+
+  @Delete(':email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete user' })
+  @ApiResponse({
+    status: 204,
+    description: 'User deleted successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  async remove(@Param('email') email: string): Promise<void> {
+    return this.userService.remove(email);
   }
 }

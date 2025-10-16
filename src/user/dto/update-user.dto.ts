@@ -1,34 +1,11 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import {
-  IsOptional,
-  IsString,
-  MaxLength,
-} from "class-validator";
+import { IsBoolean } from 'class-validator';
+import { PartialType } from '@nestjs/swagger';
 
+import { RegisterDto } from './register.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateUserDto  {
-   @IsString()
-  @ApiPropertyOptional()
-  @IsOptional()
-  email?: string;
-
-
-  @ApiPropertyOptional()
-  @IsString()
+export class UpdateUserDto extends PartialType(RegisterDto) {
   @ApiProperty()
-  @MaxLength(50)
-  password?: string;
-
-
-  @IsOptional()
-  @MaxLength(50)
-  @IsString()
-  @ApiPropertyOptional()
-  name?: string;
-
-
-  @IsString()
-  @IsOptional()
-  @ApiPropertyOptional()
-  surname?: string;
+  @IsBoolean()
+  active: boolean;
 }
