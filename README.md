@@ -4,34 +4,15 @@
 
 > **Twój klucz do studenckiego mieszkania**
 
-## Tech Stack
+### Backend: [![NestJS](https://img.shields.io/badge/NestJS-11.0-E0234E?logo=nestjs)](https://nestjs.com/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://www.typescriptlang.org/) [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js)](https://nodejs.org/) [![Prisma](https://img.shields.io/badge/Prisma-6.16-2D3748?logo=prisma)](https://www.prisma.io/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
 
-### Backend
+### Scraping & Automation: [![Puppeteer](https://img.shields.io/badge/Puppeteer-24.22-40B5A4?logo=puppeteer)](https://pptr.dev/) [![BullMQ](https://img.shields.io/badge/BullMQ-5.58-DC382D?logo=bull)](https://docs.bullmq.io/) [![Redis](https://img.shields.io/badge/Redis-7+-DC382D?logo=redis)](https://redis.io/) [![Cheerio](https://img.shields.io/badge/Cheerio-1.1-E88C1D)](https://cheerio.js.org/)
 
-[![NestJS](https://img.shields.io/badge/NestJS-11.0-E0234E?logo=nestjs)](https://nestjs.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js)](https://nodejs.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.16-2D3748?logo=prisma)](https://www.prisma.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
+### AI & Services: [![Google Gemini](https://img.shields.io/badge/Google_Gemini-0.24-4285F4?logo=google)](https://ai.google.dev/) [![Google Maps](https://img.shields.io/badge/Google_Maps-API-4285F4?logo=googlemaps)](https://developers.google.com/maps) [![Discord.js](https://img.shields.io/badge/Discord.js-14.22-5865F2?logo=discord)](https://discord.js.org/) [![Nodemailer](https://img.shields.io/badge/Nodemailer-7.0-22B8E0)](https://nodemailer.com/)
 
-### Scraping & Automation
+### DevOps: [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://www.docker.com/) [![Kubernetes](https://img.shields.io/badge/Kubernetes-Helm-326CE5?logo=kubernetes)](https://kubernetes.io/) [![Nginx](https://img.shields.io/badge/Nginx-Latest-009639?logo=nginx)](https://nginx.org/)
 
-[![Puppeteer](https://img.shields.io/badge/Puppeteer-24.22-40B5A4?logo=puppeteer)](https://pptr.dev/)
-[![BullMQ](https://img.shields.io/badge/BullMQ-5.58-DC382D?logo=bull)](https://docs.bullmq.io/)
-[![Redis](https://img.shields.io/badge/Redis-7+-DC382D?logo=redis)](https://redis.io/)
-[![Cheerio](https://img.shields.io/badge/Cheerio-1.1-E88C1D)](https://cheerio.js.org/)
-
-### AI & Services
-
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-0.24-4285F4?logo=google)](https://ai.google.dev/)
-[![Google Maps](https://img.shields.io/badge/Google_Maps-API-4285F4?logo=googlemaps)](https://developers.google.com/maps)
-[![Discord.js](https://img.shields.io/badge/Discord.js-14.22-5865F2?logo=discord)](https://discord.js.org/)
-[![Nodemailer](https://img.shields.io/badge/Nodemailer-7.0-22B8E0)](https://nodemailer.com/)
-
-### Status
-
-[![Status](https://img.shields.io/badge/Status-Beta-orange)]()
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+### Status: [![Status](https://img.shields.io/badge/Status-Beta-orange)]() [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ## O Projekcie
 
