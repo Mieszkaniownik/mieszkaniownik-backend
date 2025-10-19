@@ -1,3 +1,5 @@
+import type { Request, Response } from "express";
+
 import {
   Body,
   Controller,
@@ -8,64 +10,62 @@ import {
   Req,
   Res,
   UseGuards,
-} from '@nestjs/common';
+} from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
-} from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
-import type { Response, Request } from 'express';
+} from "@nestjs/swagger";
 
-import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from '../user/dto/register.dto';
-import { ResponseDto } from './dto/response.dto';
-import { AuthGuard as JwtAuthGuard } from './auth.guard';
-import { UserResponseDto } from '../user/dto/user-response.dto';
+import { RegisterDto } from "../user/dto/register.dto";
+import { UserResponseDto } from "../user/dto/user-response.dto";
+import { AuthGuard as JwtAuthGuard } from "./auth.guard";
+import { AuthService } from "./auth.service";
+import { LoginDto } from "./dto/login.dto";
+import { ResponseDto } from "./dto/response.dto";
 
-@ApiTags('auth')
-@Controller('auth')
+@ApiTags("auth")
+@Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
+  @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Log in with an existing account',
+    summary: "Log in with an existing account",
   })
   @ApiResponse({
     status: 200,
-    description: 'Logged in successfully',
+    description: "Logged in successfully",
   })
   @ApiResponse({
     status: 401,
-    description: 'Invalid credentials or account deactivated',
+    description: "Invalid credentials or account deactivated",
   })
   async signIn(@Body() loginDto: LoginDto): Promise<ResponseDto> {
     return this.authService.signIn(loginDto.email, loginDto.password);
   }
 
-  @Post('register')
+  @Post("register")
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create a new account',
+    summary: "Create a new account",
   })
   @ApiResponse({
     status: 201,
-    description: 'Account created successfully',
+    description: "Account created successfully",
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid data or validation failed',
+    description: "Invalid data or validation failed",
   })
   @ApiResponse({
     status: 409,
-    description: 'Account already exists',
+    description: "Account already exists",
   })
   async signUp(@Body() registerDto: RegisterDto): Promise<ResponseDto> {
-    console.log('Register request:', registerDto);
     return this.authService.signUp(
       registerDto.email,
       registerDto.name,
@@ -74,64 +74,75 @@ export class AuthController {
     );
   }
 
-  @Get('me')
+  @Get("me")
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
+  @ApiBearerAuth("access-token")
   @ApiOperation({
-    summary: 'Get current user information',
+    summary: "Get current user information",
   })
   @ApiResponse({
     status: 200,
-    description: 'User information retrieved successfully',
+    description: "User information retrieved successfully",
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - invalid or missing token',
+    description: "Unauthorized - invalid or missing token",
   })
   async getCurrentUser(
-    @Req() req: Request & { user: { email: string } },
+    @Req() request: Request & { user: { email: string } },
   ): Promise<UserResponseDto> {
     return this.authService.validateToken({
-      email: req.user.email,
-      sub: req.user.email,
+      email: request.user.email,
+      sub: request.user.email,
     });
   }
 
-  @Get('google/available')
+  @Get("google/available")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Check if Google OAuth is available',
+    summary: "Check if Google OAuth is available",
   })
   @ApiResponse({
     status: 200,
-    description: 'Google OAuth availability status',
+    description: "Google OAuth availability status",
   })
   googleAvailable() {
-    const isAvailable = !!(
-      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-    );
+    const isAvailable =
+      process.env.GOOGLE_CLIENT_ID !== undefined &&
+      process.env.GOOGLE_CLIENT_ID !== "" &&
+      process.env.GOOGLE_CLIENT_SECRET !== undefined &&
+      process.env.GOOGLE_CLIENT_SECRET !== "";
     return { available: isAvailable };
   }
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @Get("google")
+  @UseGuards(AuthGuard("google"))
   @ApiOperation({
-    summary: 'Initiate Google OAuth login',
+    summary: "Initiate Google OAuth login",
   })
+  @ApiResponse({
+    status: 302,
+    description: "Redirects to Google OAuth",
+  })
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   async googleAuth() {}
 
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
+  @Get("google/callback")
+  @UseGuards(AuthGuard("google"))
   @ApiOperation({
-    summary: 'Handle Google OAuth callback',
+    summary: "Handle Google OAuth callback",
+  })
+  @ApiResponse({
+    status: 302,
+    description: "Redirects to frontend with token or error",
   })
   async googleAuthRedirect(
-    @Req() req: Request & { user: any },
-    @Res() res: Response,
+    @Req() request: Request & { user: unknown },
+    @Res() response: Response,
   ) {
     try {
-      const googleUser = req.user as {
+      const googleUser = request.user as {
         googleId: string;
         email: string;
         name?: string;
@@ -141,12 +152,12 @@ export class AuthController {
 
       const result = await this.authService.googleLogin(googleUser);
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
+      const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+      response.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
     } catch (error) {
-      console.error('Google auth error:', error);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      res.redirect(`${frontendUrl}/login?error=oauth_failed`);
+      console.error("Google auth error:", error);
+      const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+      response.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }
   }
 }

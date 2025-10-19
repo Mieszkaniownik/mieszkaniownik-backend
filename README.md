@@ -2,17 +2,35 @@
   <img src="banner.png" alt="Mieszkaniownik Banner" width="100%"/>
 </p>
 
-> **Twój klucz do studenckiego mieszkania**
+<p align="center">
+    <strong>Twój klucz do studenckiego mieszkania</strong>
+</p>
 
-### Backend: [![NestJS](https://img.shields.io/badge/NestJS-11.0-E0234E?logo=nestjs)](https://nestjs.com/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://www.typescriptlang.org/) [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js)](https://nodejs.org/) [![Prisma](https://img.shields.io/badge/Prisma-6.16-2D3748?logo=prisma)](https://www.prisma.io/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
+<p align="center">
+<a href="https://discord.com/oauth2/authorize?client_id=1422117898389819532&scope=bot&permissions=268435456">
+    <img src="https://img.shields.io/badge/Discord-Bot-5865F2?style=for-the-badge&logo=discord" alt="Discord Bot">
+</a>
 
-### Scraping & Automation: [![Puppeteer](https://img.shields.io/badge/Puppeteer-24.22-40B5A4?logo=puppeteer)](https://pptr.dev/) [![BullMQ](https://img.shields.io/badge/BullMQ-5.58-DC382D?logo=bull)](https://docs.bullmq.io/) [![Redis](https://img.shields.io/badge/Redis-7+-DC382D?logo=redis)](https://redis.io/) [![Cheerio](https://img.shields.io/badge/Cheerio-1.1-E88C1D)](https://cheerio.js.org/)
+<a href="https://discord.gg/W2SCjUYXCe">
+    <img src="https://img.shields.io/badge/Discord-Server-7289DA?style=for-the-badge&logo=discord" alt="Discord Server">
+</a>
 
-### AI & Services: [![Google Gemini](https://img.shields.io/badge/Google_Gemini-0.24-4285F4?logo=google)](https://ai.google.dev/) [![Google Maps](https://img.shields.io/badge/Google_Maps-API-4285F4?logo=googlemaps)](https://developers.google.com/maps) [![Discord.js](https://img.shields.io/badge/Discord.js-14.22-5865F2?logo=discord)](https://discord.js.org/) [![Nodemailer](https://img.shields.io/badge/Nodemailer-7.0-22B8E0)](https://nodemailer.com/)
+<a href="mailto:mieszkaniownik@gmail.com">
+    <img src="https://img.shields.io/badge/Gmail-Contact-EA4335?style=for-the-badge&logo=gmail" alt="Gmail Contact">
+</a>
+</p>
 
-### DevOps: [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://www.docker.com/) [![Kubernetes](https://img.shields.io/badge/Kubernetes-Helm-326CE5?logo=kubernetes)](https://kubernetes.io/) [![Nginx](https://img.shields.io/badge/Nginx-Latest-009639?logo=nginx)](https://nginx.org/)
+## Tech Stack
 
-### Status: [![Status](https://img.shields.io/badge/Status-Beta-orange)]() [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![NestJS](https://img.shields.io/badge/NestJS-11.0-E0234E?logo=nestjs)](https://nestjs.com/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://www.typescriptlang.org/) [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js)](https://nodejs.org/) [![Prisma](https://img.shields.io/badge/Prisma-6.16-2D3748?logo=prisma)](https://www.prisma.io/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
+
+[![Puppeteer](https://img.shields.io/badge/Puppeteer-24.22-40B5A4?logo=puppeteer)](https://pptr.dev/) [![BullMQ](https://img.shields.io/badge/BullMQ-5.58-DC382D?logo=bull)](https://docs.bullmq.io/) [![Redis](https://img.shields.io/badge/Redis-7+-DC382D?logo=redis)](https://redis.io/) [![Cheerio](https://img.shields.io/badge/Cheerio-1.1-E88C1D)](https://cheerio.js.org/)
+
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-0.24-4285F4?logo=google)](https://ai.google.dev/) [![Google Maps](https://img.shields.io/badge/Google_Maps-API-4285F4?logo=googlemaps)](https://developers.google.com/maps) [![Discord.js](https://img.shields.io/badge/Discord.js-14.22-5865F2?logo=discord)](https://discord.js.org/) [![Nodemailer](https://img.shields.io/badge/Nodemailer-7.0-22B8E0)](https://nodemailer.com/)
+
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://www.docker.com/) [![Kubernetes](https://img.shields.io/badge/Kubernetes-Helm-326CE5?logo=kubernetes)](https://kubernetes.io/) [![Nginx](https://img.shields.io/badge/Nginx-Latest-009639?logo=nginx)](https://nginx.org/)
+
+[![Status](https://img.shields.io/badge/Status-Beta-orange)]() [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ## O Projekcie
 
@@ -29,14 +47,15 @@ Studenci poszukujący pokoju lub mieszkania
 - **Więcej ofert do wyboru** - agregacja z wielu źródeł
 - **Redukcja stresu** - żadnego strachu i stresu związanego z poszukiwaniem mieszkania
 
+### API Documentation
+
+![API Documentation](api.png)
+
 ## System Overview
 
 ```mermaid
 graph LR
-    subgraph WEBSITES["Target Websites"]
-        OLX[OLX.pl]
-        OTODOM[Otodom.pl]
-    end
+
 
     subgraph NESTJS["NestJS Application"]
         direction LR
@@ -46,9 +65,17 @@ graph LR
             STM[ScraperThreadManager]
         end
 
-        subgraph WORKERS["Worker Threads"]
-            OW[OLX Worker<br/>Puppeteer]
-            OTW[Otodom Worker<br/>Puppeteer]
+        subgraph BROWSER_POOL["Browser Pool"]
+            BP[BrowserSetupService<br/>Pool Manager]
+            OLX_BROWSERS[OLX Pool<br/>2 Browsers]
+            OTODOM_BROWSERS[Otodom Pool<br/>2 Browsers]
+            BP --> OLX_BROWSERS
+            BP --> OTODOM_BROWSERS
+        end
+
+        subgraph WORKERS["Worker Threads<br/>(Lightweight)"]
+            OW[olx-extractor.worker<br/>Regex HTML Parser]
+            OTW[otodom-extractor.worker<br/>Regex HTML Parser]
         end
 
         subgraph QUEUES["BullMQ Queues"]
@@ -59,16 +86,15 @@ graph LR
         end
 
         subgraph PROCESSORS["Queue Processors"]
-            SYS_OEP[OlxExisting<br/>Processor]
-            SYS_ONP[OlxNew<br/>Processor]
-            SYS_OTEP[OtodomExisting<br/>Processor]
-            SYS_OTNP[OtodomNew<br/>Processor]
+            SYS_OEP[OlxExisting<br/>Processor<br/>Concurrency: 2]
+            SYS_ONP[OlxNew<br/>Processor<br/>Concurrency: 2]
+            SYS_OTEP[OtodomExisting<br/>Processor<br/>Concurrency: 2]
+            SYS_OTNP[OtodomNew<br/>Processor<br/>Concurrency: 2]
             SYS_SP[Scraper<br/>Processor<br/>Core Logic]
         end
 
         subgraph SERVICES["Support Services"]
             AI[AI Address<br/>Extractor]
-            BS[Browser<br/>Setup]
             PP[Parameter<br/>Parser]
             OA[Otodom<br/>Auth Service]
         end
@@ -84,6 +110,7 @@ graph LR
     end
 
     subgraph EXTERNAL["External Services"]
+        direction TB
         REDIS[(Redis)]
         POSTGRES[(PostgreSQL)]
         GOOGLE[Google AI<br/>Gemini]
@@ -93,16 +120,27 @@ graph LR
         DISCORD[Discord<br/>API]
     end
 
+        subgraph WEBSITES["Target Websites"]
+                direction TB
+        OLX[OLX.pl]
+        OTODOM[Otodom.pl]
+    end
+
     %% Flow connections
+    WEBSITES ~~~ NESTJS
+    NESTJS ~~~ EXTERNAL
+
     SS --> STM
-    STM --> OW
-    STM --> OTW
+    STM --> BP
 
-    OW -.->|scrape| OLX
-    OTW -.->|scrape| OTODOM
+    OLX_BROWSERS -.->|fetch HTML| OLX
+    OTODOM_BROWSERS -.->|fetch HTML| OTODOM
 
-    OW --> OEQ & ONQ
-    OTW --> OTEQ & OTNQ
+    BP -.->|HTML string| STM
+    STM -.->|spawn with HTML| OW & OTW
+    OW & OTW -.->|URLs| STM
+
+    STM --> OEQ & ONQ & OTEQ & OTNQ
 
     OEQ --> SYS_OEP
     ONQ --> SYS_ONP
@@ -111,11 +149,11 @@ graph LR
 
     SYS_OEP & SYS_ONP & SYS_OTEP & SYS_OTNP --> SYS_SP
 
-    SYS_SP --> AI & BS & PP & OA
+    SYS_SP --> AI & PP & OA & BP
 
     AI --> GOOGLE
-    OA -.->|auth cookies| OTODOM
-    BS -.->|retry| OLX & OTODOM
+    OA -.->|auth cookies| OTODOM_BROWSERS
+    BP -.->|browser from pool| SYS_SP
     SYS_SP --> NOMINATIM
     SYS_SP --> DM
 
@@ -135,8 +173,8 @@ sequenceDiagram
     actor User as App Start
     participant SS as ScraperService
     participant STM as ThreadManager
-    participant OW as OLX Worker
-    participant OTW as Otodom Worker
+    participant BP as Browser Pool<br/>(2 OLX + 2 Otodom)
+    participant EW as Extractor Workers<br/>(Lightweight)
     participant OLX as OLX.pl
     participant OTODOM as Otodom.pl
     participant QE as Existing Queues<br/>(Priority: 5)
@@ -149,19 +187,27 @@ sequenceDiagram
         User->>SS: onModuleInit()
         SS->>STM: startExistingOffersWorkers()
 
-        par Parallel Scraping
-            STM->>OW: Spawn Worker (isNew: false)
-            OW->>OLX: Scrape pages 1-25
-            OLX-->>OW: Offer URLs
-            OW->>QE: Queue URLs
+        par Parallel Scraping with Browser Pool
+            STM->>BP: Get OLX browser
+            BP->>OLX: Fetch HTML (pages 1-10)
+            OLX-->>BP: HTML content
+            BP-->>STM: HTML content
+            STM->>EW: Spawn olx-extractor.worker
+            Note over EW: Parse HTML with regex<br/>Extract offer URLs<br/>(< 1 second)
+            EW-->>STM: Offer URLs
+            STM->>QE: Queue URLs (olx-existing)
             QE->>PROC: Consume (P:5)
             PROC->>SP: Process offers
             SP-->>DB: Save (isNew: false)
         and
-            STM->>OTW: Spawn Worker (isNew: false)
-            OTW->>OTODOM: Scrape pages 1-500
-            OTODOM-->>OTW: Offer URLs
-            OTW->>QE: Queue URLs
+            STM->>BP: Get Otodom browser
+            BP->>OTODOM: Fetch HTML (pages 1-10)
+            OTODOM-->>BP: HTML content
+            BP-->>STM: HTML content
+            STM->>EW: Spawn otodom-extractor.worker
+            Note over EW: Parse HTML with regex<br/>Extract offer URLs<br/>(< 1 second)
+            EW-->>STM: Offer URLs
+            STM->>QE: Queue URLs (otodom-existing)
             QE->>PROC: Consume (P:5)
             PROC->>SP: Process offers
             SP-->>DB: Save (isNew: false)
@@ -170,46 +216,56 @@ sequenceDiagram
     Note over User,DB: Phase 2: Continuous - New Offers (Every Second)
         SS->>STM: startNewOffersWorkers()
 
-        par High Priority Scraping
-            STM->>OW: Spawn Worker (isNew: true)
-            OW->>OLX: Scrape PAGE 1 ONLY
-            OLX-->>OW: Latest URLs
-            OW->>QN: Queue (HIGH Priority)
+        par High Priority Scraping with Browser Pool
+            STM->>BP: Get OLX browser
+            BP->>OLX: Fetch HTML (PAGE 1 ONLY)
+            OLX-->>BP: Latest HTML
+            BP-->>STM: HTML content
+            STM->>EW: Spawn olx-extractor.worker
+            EW-->>STM: Latest URLs
+            STM->>QN: Queue (olx-new, P:1 HIGH)
             QN->>PROC: Consume (P:1)
             PROC->>SP: Process offers
             SP-->>DB: Save (isNew: true)
         and
-            STM->>OTW: Spawn Worker (isNew: true)
-            OTW->>OTODOM: Scrape PAGE 1 ONLY
-            OTODOM-->>OTW: Latest URLs
-            OTW->>QN: Queue (HIGH Priority)
+            STM->>BP: Get Otodom browser
+            BP->>OTODOM: Fetch HTML (PAGE 1 ONLY)
+            OTODOM-->>BP: Latest HTML
+            BP-->>STM: HTML content
+            STM->>EW: Spawn otodom-extractor.worker
+            EW-->>STM: Latest URLs
+            STM->>QN: Queue (otodom-new, P:1 HIGH)
             QN->>PROC: Consume (P:1)
             PROC->>SP: Process offers
             SP-->>DB: Save (isNew: true)
         end
 
     Note over User,DB: Phase 3: Full Refresh (Every Hour)
-        SS->>STM: scrapeWithBothThreads(25, 500)
-        Note over STM: Triggers complete scraping cycle
+        SS->>STM: startExistingOffersWorkers()
+        SS->>STM: startNewOffersWorkers()
+        Note over STM: Triggers complete scraping cycle<br/>using browser pools
 ```
 
-## Scraping Algorithm Flow
+## Scraping Algorithm
 
 ```mermaid
 flowchart TB
     START([App Start<br/>+5s delay])
     START --> INIT[Init Service<br/>startExistingWorkers]
-    INIT --> SPAWN_EXIST[Spawn 2 Threads]
+    INIT --> BROWSER_POOL[Browser Pool Init<br/>2 OLX + 2 Otodom browsers]
 
-    SPAWN_EXIST --> SPLIT_EXIST{ }
-    SPLIT_EXIST --> OLX_EXIST[OLX Worker<br/>isNew: false]
-    SPLIT_EXIST --> OTDM_EXIST[Otodom Worker<br/>isNew: false]
+    BROWSER_POOL --> SPLIT_EXIST{ }
+    SPLIT_EXIST --> OLX_EXIST[OLX Main Thread]
+    SPLIT_EXIST --> OTDM_EXIST[Otodom Main Thread]
 
-    OLX_EXIST --> OLX_SCRAPE[Scrape 25 pages<br/>Extract URLs]
-    OTDM_EXIST --> OTDM_SCRAPE[Scrape 500 pages<br/>Extract URLs]
+    OLX_EXIST --> OLX_FETCH[Fetch HTML via Browser Pool<br/>Pages 1-10]
+    OTDM_EXIST --> OTDM_FETCH[Fetch HTML via Browser Pool<br/>Pages 1-10]
 
-    OLX_SCRAPE --> OLX_Q[olx-existing<br/>P:5]
-    OTDM_SCRAPE --> OTDM_Q[otodom-existing<br/>P:5]
+    OLX_FETCH --> OLX_WORKER[Spawn olx-extractor.worker<br/>Parse HTML with regex]
+    OTDM_FETCH --> OTDM_WORKER[Spawn otodom-extractor.worker<br/>Parse HTML with regex]
+
+    OLX_WORKER --> OLX_Q[olx-existing<br/>P:5]
+    OTDM_WORKER --> OTDM_Q[otodom-existing<br/>P:5]
 
     OLX_Q --> OLX_PROC[OlxExistingProc]
     OTDM_Q --> OTDM_PROC[OtodomExistingProc]
@@ -219,17 +275,19 @@ flowchart TB
 
     MERGE_EXIST --> CRON_SEC([Every Second<br/>Cron Job])
     CRON_SEC --> NEW_INIT[Start New Workers]
-    NEW_INIT --> SPAWN_NEW[Spawn 2 Threads]
+    NEW_INIT --> SPLIT_NEW{ }
 
-    SPAWN_NEW --> SPLIT_NEW{ }
-    SPLIT_NEW --> OLX_NEW[OLX Worker<br/>isNew: true]
-    SPLIT_NEW --> OTDM_NEW[Otodom Worker<br/>isNew: true]
+    SPLIT_NEW --> OLX_NEW[OLX Main Thread]
+    SPLIT_NEW --> OTDM_NEW[Otodom Main Thread]
 
-    OLX_NEW --> OLX_NEW_SCRAPE[Scrape PAGE 1<br/>Latest URLs]
-    OTDM_NEW --> OTDM_NEW_SCRAPE[Scrape PAGE 1<br/>Latest URLs]
+    OLX_NEW --> OLX_NEW_FETCH[Fetch HTML via Browser Pool<br/>PAGE 1 ONLY]
+    OTDM_NEW --> OTDM_NEW_FETCH[Fetch HTML via Browser Pool<br/>PAGE 1 ONLY]
 
-    OLX_NEW_SCRAPE --> OLX_NEW_Q[olx-new<br/>P:1 HIGH]
-    OTDM_NEW_SCRAPE --> OTDM_NEW_Q[otodom-new<br/>P:1 HIGH]
+    OLX_NEW_FETCH --> OLX_NEW_WORKER[Spawn olx-extractor.worker]
+    OTDM_NEW_FETCH --> OTDM_NEW_WORKER[Spawn otodom-extractor.worker]
+
+    OLX_NEW_WORKER --> OLX_NEW_Q[olx-new<br/>P:1 HIGH]
+    OTDM_NEW_WORKER --> OTDM_NEW_Q[otodom-new<br/>P:1 HIGH]
 
     OLX_NEW_Q --> OLX_NEW_PROC[OlxNewProc]
     OTDM_NEW_Q --> OTDM_NEW_PROC[OtodomNewProc]
@@ -239,7 +297,7 @@ flowchart TB
 
     MERGE_NEW --> MAIN_PROC[ScraperProcessor<br/>Main Logic]
 
-    MAIN_PROC --> BROWSER[Browser Setup<br/>Puppeteer]
+    MAIN_PROC --> BROWSER[Browser Setup<br/>From Pool]
     BROWSER --> AUTH{Otodom?}
     AUTH -->|Yes| OTODOM_AUTH[Apply Auth<br/>Cookies]
     AUTH -->|No| PARSE
@@ -255,12 +313,12 @@ flowchart TB
     NOTIFY --> END
 
     CRON_HOUR([Every Hour<br/>Full Refresh])
-    CRON_HOUR --> FULL[Full Scrape<br/>scrapeWithBothThreads]
-    FULL --> SPAWN_EXIST
+    CRON_HOUR --> FULL[Run Both Workers<br/>Existing + New]
+    FULL --> BROWSER_POOL
     END --> CRON_SEC
 ```
 
-## Worker Thread Implementation
+## Worker Thread
 
 ```mermaid
 graph TB
@@ -268,8 +326,19 @@ graph TB
         direction TB
         SS[ScraperService<br/>Cron Orchestrator]
         STM[ThreadManager<br/>Worker Management]
+        BP[BrowserSetupService<br/>Browser Pool Manager]
 
         SS --> STM
+        STM --> BP
+
+        subgraph BROWSER_POOLS["Browser Pools (Separate)"]
+            direction LR
+            OLX_POOL[OLX Pool<br/>2 browsers<br/>Max concurrent: 2]
+            OTODOM_POOL[Otodom Pool<br/>2 browsers<br/>Max concurrent: 2]
+        end
+
+        BP --> OLX_POOL
+        BP --> OTODOM_POOL
 
         subgraph QUEUES["BullMQ Queue System"]
             direction LR
@@ -281,10 +350,10 @@ graph TB
 
         subgraph PROCESSORS["Queue Processors"]
             direction TB
-            OEP[OlxExisting]
-            ONP[OlxNew]
-            OTEP[OtodomExisting]
-            OTNP[OtodomNew]
+            OEP[OlxExisting<br/>Concurrency: 2]
+            ONP[OlxNew<br/>Concurrency: 2]
+            OTEP[OtodomExisting<br/>Concurrency: 2]
+            OTNP[OtodomNew<br/>Concurrency: 2]
             SP[ScraperProcessor<br/>Core Logic<br/><i>Shared by all processors</i>]
 
             OEP --> SP
@@ -294,37 +363,46 @@ graph TB
         end
     end
 
-    subgraph WT1["Worker Thread 1: olx-worker.ts"]
+    subgraph WT1["Worker Thread 1: olx-extractor.worker.ts"]
         direction TB
         OW[Entry Point]
-        OW_DATA[Worker Data<br/>• pageNum<br/>• sortOrder<br/>• baseUrl<br/>• userAgents<br/>• isNewOffersOnly]
-        OW_PUPPET[Puppeteer<br/>+ Stealth Plugin]
-        OW_LOGIC[Scraping Logic<br/>Navigate & Extract]
+        OW_DATA[Worker Data<br/>• pageNum<br/>• html string<br/>• isNewOffersOnly]
+        OW_REGEX[Regex Extraction<br/>No Puppeteer<br/>Pure HTML parsing]
+        OW_RETURN[Return URLs<br/>< 1 second]
 
         OW --> OW_DATA
-        OW_DATA --> OW_PUPPET
-        OW_PUPPET --> OW_LOGIC
+        OW_DATA --> OW_REGEX
+        OW_REGEX --> OW_RETURN
     end
 
-    subgraph WT2["Worker Thread 2: otodom-worker.ts"]
+    subgraph WT2["Worker Thread 2: otodom-extractor.worker.ts"]
         direction TB
         OTW[Entry Point]
-        OTW_DATA[Worker Data<br/>• pageNum<br/>• baseUrl<br/>• userAgents<br/>• isNewOffersOnly]
-        OTW_PUPPET[Puppeteer<br/>+ Stealth Plugin]
-        OTW_LOGIC[Scraping Logic<br/>Navigate & Extract]
+        OTW_DATA[Worker Data<br/>• pageNum<br/>• html string<br/>• isNewOffersOnly]
+        OTW_REGEX[Regex Extraction<br/>No Puppeteer<br/>Pure HTML parsing]
+        OTW_RETURN[Return URLs<br/>< 1 second]
 
         OTW --> OTW_DATA
-        OTW_DATA --> OTW_PUPPET
-        OTW_PUPPET --> OTW_LOGIC
+        OTW_DATA --> OTW_REGEX
+        OTW_REGEX --> OTW_RETURN
     end
 
-    %% Main Thread spawns Workers
-    STM -.->|spawn| OW
-    STM -.->|spawn| OTW
+    subgraph WEBSITES["Target Websites"]
+        OLX[OLX.pl]
+        OTODOM[Otodom.pl]
+    end
 
-    %% Workers return to Main Thread
-    OW_LOGIC -.->|URLs| STM
-    OTW_LOGIC -.->|URLs| STM
+    %% Browser Pool fetches HTML
+    OLX_POOL -.->|fetch HTML| OLX
+    OTODOM_POOL -.->|fetch HTML| OTODOM
+
+    %% Main Thread spawns Workers with HTML
+    STM -.->|spawn with HTML| OW
+    STM -.->|spawn with HTML| OTW
+
+    %% Workers return URLs to Main Thread
+    OW_RETURN -.->|URLs| STM
+    OTW_RETURN -.->|URLs| STM
 
     %% Main Thread queues URLs
     STM --> OEQ & ONQ & OTEQ & OTNQ
@@ -334,9 +412,12 @@ graph TB
     ONQ --> ONP
     OTEQ --> OTEP
     OTNQ --> OTNP
+
+    %% Processors use Browser Pool
+    SP --> BP
 ```
 
-## Database Schema & Data Flow
+## Database Schema
 
 ```mermaid
 erDiagram

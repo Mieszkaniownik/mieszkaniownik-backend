@@ -1,6 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { BuildingType, OwnerType, ParkingType } from '@prisma/client';
-import { CreateOfferDto } from '../../offer/dto/create-offer.dto';
+import { BuildingType, OwnerType, ParkingType } from "@prisma/client";
+
+import { Injectable, Logger } from "@nestjs/common";
+
+import { CreateOfferDto } from "../../offer/dto/create-offer.dto";
 
 @Injectable()
 export class ScraperOfferMapperService {
@@ -40,44 +42,110 @@ export class ScraperOfferMapperService {
   }): CreateOfferDto {
     const dto: CreateOfferDto = {
       link: data.url,
-      title: data.title || '',
-      price: data.price || 0,
-      city:
-        data.city && data.city.trim() !== '' ? data.city.trim() : 'Nieznane',
-      source: 'olx',
+      title: data.title ?? "",
+      price: data.price ?? 0,
+      city: data.city.trim() === "" ? "Nieznane" : data.city.trim(),
+      source: "olx",
     };
 
-    if (data.district) dto.district = data.district;
-    if (data.footage) dto.footage = data.footage;
-    if (data.description) dto.description = data.description;
-    if (data.summary) dto.summary = data.summary;
-    if (data.street) dto.street = data.street;
-    if (data.streetNumber) dto.streetNumber = data.streetNumber;
-    if (data.latitude !== null && data.latitude !== undefined)
+    if (data.district !== undefined && data.district !== "") {
+      dto.district = data.district ?? undefined;
+    }
+    if (
+      data.footage !== undefined &&
+      data.footage !== null &&
+      data.footage !== 0
+    ) {
+      dto.footage = data.footage;
+    }
+    if (data.description !== undefined && data.description !== "") {
+      dto.description = data.description ?? undefined;
+    }
+    if (data.summary !== undefined && data.summary !== "") {
+      dto.summary = data.summary ?? undefined;
+    }
+    if (data.street !== undefined && data.street !== "") {
+      dto.street = data.street ?? undefined;
+    }
+    if (data.streetNumber !== undefined && data.streetNumber !== "") {
+      dto.streetNumber = data.streetNumber ?? undefined;
+    }
+    if (data.latitude !== null && data.latitude !== undefined) {
       dto.latitude = data.latitude;
-    if (data.longitude !== null && data.longitude !== undefined)
+    }
+    if (data.longitude !== null && data.longitude !== undefined) {
       dto.longitude = data.longitude;
-    if (data.rooms !== null && data.rooms !== undefined) dto.rooms = data.rooms;
-    if (data.floor !== null && data.floor !== undefined) dto.floor = data.floor;
-    if (data.furniture !== null && data.furniture !== undefined)
+    }
+    if (data.rooms !== null && data.rooms !== undefined) {
+      dto.rooms = data.rooms;
+    }
+    if (data.floor !== null && data.floor !== undefined) {
+      dto.floor = data.floor;
+    }
+    if (data.furniture !== null && data.furniture !== undefined) {
       dto.furniture = data.furniture;
-    if (data.elevator !== null && data.elevator !== undefined)
+    }
+    if (data.elevator !== null && data.elevator !== undefined) {
       dto.elevator = data.elevator;
-    if (data.pets !== null && data.pets !== undefined) dto.pets = data.pets;
-    if (data.negotiable !== null && data.negotiable !== undefined)
+    }
+    if (data.pets !== null && data.pets !== undefined) {
+      dto.pets = data.pets;
+    }
+    if (data.negotiable !== null && data.negotiable !== undefined) {
       dto.negotiable = data.negotiable;
-    if (data.ownerType) dto.ownerType = data.ownerType;
-    if (data.buildingType) dto.buildingType = data.buildingType;
-    if (data.parkingType) dto.parkingType = data.parkingType;
-    if (data.rentAdditional) dto.rentAdditional = data.rentAdditional;
-    if (data.contact) dto.contact = data.contact;
-    if (data.views !== undefined) dto.views = data.views;
-    if (data.createdAt) dto.createdAt = data.createdAt;
-    if (data.isNew !== undefined) dto.isNew = data.isNew;
-    if (data.images && data.images.length > 0) dto.images = data.images;
-    if (data.infoAdditional) dto.infoAdditional = data.infoAdditional;
-    if (data.furnishing) dto.furnishing = data.furnishing;
-    if (data.media) dto.media = data.media;
+    }
+    if (data.ownerType !== null && data.ownerType !== undefined) {
+      dto.ownerType = data.ownerType;
+    }
+    if (data.buildingType !== null && data.buildingType !== undefined) {
+      dto.buildingType = data.buildingType;
+    }
+    if (data.parkingType !== null && data.parkingType !== undefined) {
+      dto.parkingType = data.parkingType;
+    }
+    if (
+      data.rentAdditional !== undefined &&
+      data.rentAdditional !== null &&
+      data.rentAdditional !== 0
+    ) {
+      dto.rentAdditional = data.rentAdditional;
+    }
+    if (
+      data.contact !== undefined &&
+      data.contact !== null &&
+      data.contact !== ""
+    ) {
+      dto.contact = data.contact;
+    }
+    if (data.views !== undefined) {
+      dto.views = data.views;
+    }
+    if (data.createdAt !== null && data.createdAt !== undefined) {
+      dto.createdAt = data.createdAt;
+    }
+    if (data.isNew !== undefined) {
+      dto.isNew = data.isNew;
+    }
+    if (data.images !== undefined && data.images.length > 0) {
+      dto.images = data.images;
+    }
+    if (
+      data.infoAdditional !== undefined &&
+      data.infoAdditional !== null &&
+      data.infoAdditional !== ""
+    ) {
+      dto.infoAdditional = data.infoAdditional;
+    }
+    if (
+      data.furnishing !== undefined &&
+      data.furnishing !== null &&
+      data.furnishing !== ""
+    ) {
+      dto.furnishing = data.furnishing;
+    }
+    if (data.media !== undefined && data.media !== null && data.media !== "") {
+      dto.media = data.media;
+    }
 
     return dto;
   }
@@ -112,39 +180,114 @@ export class ScraperOfferMapperService {
   }): CreateOfferDto {
     const dto: CreateOfferDto = {
       link: data.url,
-      title: data.title || '',
+      title: data.title ?? "",
       price: data.price,
-      city:
-        data.city && data.city.trim() !== '' ? data.city.trim() : 'Nieznane',
-      source: 'otodom',
+      city: data.city.trim() === "" ? "Nieznane" : data.city.trim(),
+      source: "otodom",
     };
 
-    if (data.district) dto.district = data.district;
-    if (data.footage) dto.footage = data.footage;
-    if (data.description) dto.description = data.description;
-    if (data.summary) dto.summary = data.summary;
-    if (data.street) dto.street = data.street;
-    if (data.streetNumber) dto.streetNumber = data.streetNumber;
-    if (data.latitude !== null && data.latitude !== undefined)
+    if (
+      data.district !== undefined &&
+      data.district !== null &&
+      data.district !== ""
+    ) {
+      dto.district = data.district;
+    }
+    if (
+      data.footage !== undefined &&
+      data.footage !== null &&
+      data.footage !== 0
+    ) {
+      dto.footage = data.footage;
+    }
+    if (
+      data.description !== undefined &&
+      data.description !== null &&
+      data.description !== ""
+    ) {
+      dto.description = data.description;
+    }
+    if (
+      data.summary !== undefined &&
+      data.summary !== null &&
+      data.summary !== ""
+    ) {
+      dto.summary = data.summary;
+    }
+    if (
+      data.street !== undefined &&
+      data.street !== null &&
+      data.street !== ""
+    ) {
+      dto.street = data.street;
+    }
+    if (
+      data.streetNumber !== undefined &&
+      data.streetNumber !== null &&
+      data.streetNumber !== ""
+    ) {
+      dto.streetNumber = data.streetNumber;
+    }
+    if (data.latitude !== null && data.latitude !== undefined) {
       dto.latitude = data.latitude;
-    if (data.longitude !== null && data.longitude !== undefined)
+    }
+    if (data.longitude !== null && data.longitude !== undefined) {
       dto.longitude = data.longitude;
-    if (data.rooms !== null && data.rooms !== undefined) dto.rooms = data.rooms;
-    if (data.floor !== null && data.floor !== undefined) dto.floor = data.floor;
-    if (data.furniture !== null && data.furniture !== undefined)
+    }
+    if (data.rooms !== null && data.rooms !== undefined) {
+      dto.rooms = data.rooms;
+    }
+    if (data.floor !== null && data.floor !== undefined) {
+      dto.floor = data.floor;
+    }
+    if (data.furniture !== null && data.furniture !== undefined) {
       dto.furniture = data.furniture;
-    if (data.elevator !== null && data.elevator !== undefined)
+    }
+    if (data.elevator !== null && data.elevator !== undefined) {
       dto.elevator = data.elevator;
-    if (data.ownerType) dto.ownerType = data.ownerType;
-    if (data.buildingType) dto.buildingType = data.buildingType;
-    if (data.contact) dto.contact = data.contact;
-    if (data.views !== undefined) dto.views = data.views;
-    if (data.createdAt) dto.createdAt = data.createdAt;
-    if (data.isNew !== undefined) dto.isNew = data.isNew;
-    if (data.images && data.images.length > 0) dto.images = data.images;
-    if (data.infoAdditional) dto.infoAdditional = data.infoAdditional;
-    if (data.furnishing) dto.furnishing = data.furnishing;
-    if (data.media) dto.media = data.media;
+    }
+    if (data.ownerType) {
+      dto.ownerType = data.ownerType;
+    }
+    if (data.buildingType) {
+      dto.buildingType = data.buildingType;
+    }
+    if (
+      data.contact !== undefined &&
+      data.contact !== null &&
+      data.contact !== ""
+    ) {
+      dto.contact = data.contact;
+    }
+    if (data.views !== undefined) {
+      dto.views = data.views;
+    }
+    if (data.createdAt !== null && data.createdAt !== undefined) {
+      dto.createdAt = data.createdAt;
+    }
+    if (data.isNew !== undefined) {
+      dto.isNew = data.isNew;
+    }
+    if (data.images !== undefined && data.images.length > 0) {
+      dto.images = data.images;
+    }
+    if (
+      data.infoAdditional !== undefined &&
+      data.infoAdditional !== null &&
+      data.infoAdditional !== ""
+    ) {
+      dto.infoAdditional = data.infoAdditional;
+    }
+    if (
+      data.furnishing !== undefined &&
+      data.furnishing !== null &&
+      data.furnishing !== ""
+    ) {
+      dto.furnishing = data.furnishing;
+    }
+    if (data.media !== undefined && data.media !== null && data.media !== "") {
+      dto.media = data.media;
+    }
 
     return dto;
   }
@@ -163,21 +306,22 @@ export class ScraperOfferMapperService {
       title: data.title,
       price: data.price,
       city:
-        data.city && data.city.trim() !== '' ? data.city.trim() : 'Nieznane',
+        data.city && data.city.trim() !== "" ? data.city.trim() : "Nieznane",
       source,
     };
 
-    Object.keys(data).forEach((key) => {
+    for (const key of Object.keys(data)) {
       if (
-        key !== 'url' &&
-        key !== 'link' &&
-        key !== 'source' &&
+        key !== "url" &&
+        key !== "link" &&
+        key !== "source" &&
         data[key] !== undefined &&
         data[key] !== null
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         dto[key] = data[key];
       }
-    });
+    }
 
     return dto;
   }

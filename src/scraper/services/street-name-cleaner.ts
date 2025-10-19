@@ -1,110 +1,111 @@
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class StreetNameCleaner {
   private static readonly PROMOTIONAL_SUFFIXES = [
-    'oś. Energetyki. Wynajmę mieszkanie',
-    'oś. Energetyki. Wynajmę',
-    'Wynajmę mieszkanie',
-    'Wynajmę',
-    'Do wynajęcia',
-    'Na wynajem',
-    'MIESZKANIE DO NAJMU',
-    'MIESZKANIE',
-    'Mieszkanie składa się z',
-    'Mieszkanie',
-    'Do najmu',
-    'Najem',
+    "oś. Energetyki. Wynajmę mieszkanie",
+    "oś. Energetyki. Wynajmę",
+    "Wynajmę mieszkanie",
+    "Wynajmę",
+    "Do wynajęcia",
+    "Na wynajem",
+    "MIESZKANIE DO NAJMU",
+    "MIESZKANIE",
+    "Mieszkanie składa się z",
+    "Mieszkanie",
+    "Do najmu",
+    "Najem",
 
-    'dostępne od',
-    'od zaraz',
-    'wolne od',
-    'lokalizacja',
-    'centrum',
-    'blisko',
-    'przy',
-    'obok',
-    'w pobliżu',
-    'niedaleko',
-    'tuż przy',
-    'vis-à-vis',
+    "dostępne od",
+    "od zaraz",
+    "wolne od",
+    "lokalizacja",
+    "centrum",
+    "blisko",
+    "przy",
+    "obok",
+    "w pobliżu",
+    "niedaleko",
+    "tuż przy",
+    "vis-à-vis",
 
-    'nieruchomość',
-    'oferta',
-    'ogłoszenie',
-    'sprzedam',
-    'kupię',
-    'szukam',
-    'poszukuję',
-    'pilnie',
-    'zapraszam',
-    'serdecznie zapraszam',
-    'kontakt',
-    'tel',
-    'telefon',
-    'dzwoń',
+    "nieruchomość",
+    "oferta",
+    "ogłoszenie",
+    "sprzedam",
+    "kupię",
+    "szukam",
+    "poszukuję",
+    "pilnie",
+    "zapraszam",
+    "serdecznie zapraszam",
+    "kontakt",
+    "tel",
+    "telefon",
+    "dzwoń",
 
-    'umeblowane',
-    'nieumeblowane',
-    'z balkonem',
-    'z garażem',
-    'z piwnicą',
-    'z ogródkiem',
-    'taras',
-    'loggia',
-    'antresola',
-    'klimatyzacja',
-    'ogrzewanie',
-    'winda',
-    'bez windy',
-    'parking',
-    'garaż',
-    'piwnica',
+    "umeblowane",
+    "nieumeblowane",
+    "z balkonem",
+    "z garażem",
+    "z piwnicą",
+    "z ogródkiem",
+    "taras",
+    "loggia",
+    "antresola",
+    "klimatyzacja",
+    "ogrzewanie",
+    "winda",
+    "bez windy",
+    "parking",
+    "garaż",
+    "piwnica",
 
-    'od grudnia',
-    'od stycznia',
-    'od lutego',
-    'od marca',
-    'od kwietnia',
-    'od maja',
-    'od czerwca',
-    'od lipca',
-    'od sierpnia',
-    'od września',
-    'od października',
-    'od listopada',
-    'styczeń',
-    'luty',
-    'marzec',
-    'kwiecień',
-    'maj',
-    'czerwiec',
-    'lipiec',
-    'sierpień',
-    'wrzesień',
-    'październik',
-    'listopad',
-    'grudzień',
+    "od grudnia",
+    "od stycznia",
+    "od lutego",
+    "od marca",
+    "od kwietnia",
+    "od maja",
+    "od czerwca",
+    "od lipca",
+    "od sierpnia",
+    "od września",
+    "od października",
+    "od listopada",
+    "styczeń",
+    "luty",
+    "marzec",
+    "kwiecień",
+    "maj",
+    "czerwiec",
+    "lipiec",
+    "sierpień",
+    "wrzesień",
+    "październik",
+    "listopad",
+    "grudzień",
 
-    '. ',
-    ', ',
-    ' - ',
-    ' – ',
-    ' | ',
-    ' / ',
+    ". ",
+    ", ",
+    " - ",
+    " – ",
+    " | ",
+    " / ",
   ];
 
   private static readonly STREET_PREFIXES = [
-    'ul.',
-    'ulica',
-    'al.',
-    'aleja',
-    'os.',
-    'osiedle',
-    'pl.',
-    'plac',
-    'św.',
-    'świętego',
-    'świętej',
-    'im.',
-    'imienia',
+    "ul.",
+    "ulica",
+    "al.",
+    "aleja",
+    "os.",
+    "osiedle",
+    "pl.",
+    "plac",
+    "św.",
+    "świętego",
+    "świętej",
+    "im.",
+    "imienia",
   ];
 
   private static readonly POLISH_STREET_PATTERNS = [
@@ -118,22 +119,22 @@ export class StreetNameCleaner {
   ];
 
   public static cleanStreetName(streetName: string): string {
-    if (!streetName || typeof streetName !== 'string') {
-      return '';
+    if (!streetName || typeof streetName !== "string") {
+      return "";
     }
 
     let cleaned = streetName.trim();
 
     const extracted = this.extractCoreStreetName(cleaned);
-    if (extracted) {
+    if (extracted !== null && extracted !== "") {
       cleaned = extracted;
     } else {
-      const punctuationSplits = ['. ', ', ', ' - ', ' – ', ' | ', ' / ', ': '];
+      const punctuationSplits = [". ", ", ", " - ", " – ", " | ", " / ", ": "];
 
       for (const punct of punctuationSplits) {
         const index = cleaned.indexOf(punct);
         if (index > 0) {
-          const beforePunct = cleaned.substring(0, index).trim();
+          const beforePunct = cleaned.slice(0, Math.max(0, index)).trim();
 
           if (this.looksLikeValidStreetName(beforePunct)) {
             cleaned = beforePunct;
@@ -149,29 +150,32 @@ export class StreetNameCleaner {
       ];
 
       for (const pattern of promotionalPatterns) {
-        cleaned = cleaned.replace(pattern, '').trim();
+        cleaned = cleaned.replace(pattern, "").trim();
       }
 
       const numericPattern =
         /^([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s.-]+?)\s+\d+\s*[-–].*$/i;
-      const numericMatch = cleaned.match(numericPattern);
-      if (numericMatch) {
+      const numericMatch = numericPattern.exec(cleaned);
+      if (numericMatch !== null) {
         cleaned = numericMatch[1].trim();
       }
 
-      cleaned = cleaned.replace(/\s+/g, ' ').trim();
+      cleaned = cleaned.replaceAll(/\s+/g, " ").trim();
 
-      cleaned = cleaned.replace(/[,;!?]+$/, '').trim();
+      cleaned = cleaned.replace(/[,;!?]+$/, "").trim();
 
       const words = cleaned.split(/\s+/);
       if (words.length > 1) {
+        let lastWord = words.at(-1);
         while (
           words.length > 1 &&
-          this.isDescriptiveWord(words[words.length - 1])
+          lastWord !== undefined &&
+          this.isDescriptiveWord(lastWord)
         ) {
           words.pop();
+          lastWord = words.at(-1);
         }
-        cleaned = words.join(' ').trim();
+        cleaned = words.join(" ").trim();
       }
     }
 
@@ -198,21 +202,21 @@ export class StreetNameCleaner {
     const lowerText = text.toLowerCase();
 
     const promotionalKeywords = [
-      'wynajmę',
-      'mieszkanie',
-      'do wynajęcia',
-      'najem',
-      'oferta',
-      'sprzedam',
-      'kupię',
-      'szukam',
-      'pilnie',
-      'zapraszam',
-      'umeblowane',
-      'dostępne',
-      'wolne',
-      'kontakt',
-      'telefon',
+      "wynajmę",
+      "mieszkanie",
+      "do wynajęcia",
+      "najem",
+      "oferta",
+      "sprzedam",
+      "kupię",
+      "szukam",
+      "pilnie",
+      "zapraszam",
+      "umeblowane",
+      "dostępne",
+      "wolne",
+      "kontakt",
+      "telefon",
     ];
 
     return promotionalKeywords.some((keyword) => lowerText.includes(keyword));
@@ -222,95 +226,101 @@ export class StreetNameCleaner {
     const lowerWord = word.toLowerCase();
 
     const descriptiveWords = [
-      'mieszkanie',
-      'wynajmę',
-      'składa',
-      'dostępne',
-      'wolne',
-      'umeblowane',
-      'nieumeblowane',
-      'balkon',
-      'garaż',
-      'parking',
-      'winda',
-      'centrum',
-      'blisko',
-      'przy',
-      'obok',
-      'niedaleko',
-      'najmu',
-      'wynajęcia',
-      'zaraz',
-      'pokoje',
-      'pokojowe',
-      'kawalerka',
-      'kawalerkę',
-      'pilnie',
-      'pilne!',
-      'pilne',
+      "mieszkanie",
+      "wynajmę",
+      "składa",
+      "dostępne",
+      "wolne",
+      "umeblowane",
+      "nieumeblowane",
+      "balkon",
+      "garaż",
+      "parking",
+      "winda",
+      "centrum",
+      "blisko",
+      "przy",
+      "obok",
+      "niedaleko",
+      "najmu",
+      "wynajęcia",
+      "zaraz",
+      "pokoje",
+      "pokojowe",
+      "kawalerka",
+      "kawalerkę",
+      "pilnie",
+      "pilne!",
+      "pilne",
     ];
 
     return descriptiveWords.includes(lowerWord);
   }
 
   private static extractCoreStreetName(text: string): string | null {
-    const streetPrefixAnywhere = text.match(
-      /(ul\.|ulica|al\.|aleja|os\.|osiedle|pl\.|plac)\s+([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s.-]+?)(?:\s*[,;-]|\s+(?:\d+|mieszkanie|do|wolne|od|umeblowane|wynajmę|pokoje?).*|$)/i,
-    );
-    if (streetPrefixAnywhere) {
+    const streetPrefixAnywhere =
+      /(ul\.|ulica|al\.|aleja|os\.|osiedle|pl\.|plac)\s+([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s.-]+?)(?:\s*[,;-]|\s+(?:\d+|mieszkanie|do|wolne|od|umeblowane|wynajmę|pokoje?).*|$)/i.exec(
+        text,
+      );
+    if (streetPrefixAnywhere !== null) {
       const prefix = streetPrefixAnywhere[1];
       const streetName = streetPrefixAnywhere[2].trim();
-      const cleanStreetName = streetName.replace(/[,;.!?-]+$/, '').trim();
+      const cleanStreetName = streetName.replace(/[,;.!?-]+$/, "").trim();
       return `${prefix} ${cleanStreetName}`;
     }
 
-    const contextualPattern = text.match(
-      /(?:mieszkanie\s+na\s+|przy\s+|na\s+|lokalizacja\s+przy\s+|pilne!?\s+)?(ul\.|ulica|al\.|aleja|os\.|osiedle|pl\.|plac)\s*([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s.-]+?)(?:\s+(?:mieszkanie|do|wolne|od|umeblowane|wynajmę|,|\d+|[-–]).*)?$/i,
-    );
-    if (contextualPattern) {
+    const contextualPattern =
+      /(?:mieszkanie\s+na\s+|przy\s+|na\s+|lokalizacja\s+przy\s+|pilne!?\s+)?(ul\.|ulica|al\.|aleja|os\.|osiedle|pl\.|plac)\s*([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s.-]+?)(?:\s+(?:mieszkanie|do|wolne|od|umeblowane|wynajmę|,|\d+|[-–]).*)?$/i.exec(
+        text,
+      );
+    if (contextualPattern !== null) {
       const prefix = contextualPattern[1];
       const streetName = contextualPattern[2].trim();
 
-      const cleanStreetName = streetName.replace(/[,;.!?]+$/, '').trim();
+      const cleanStreetName = streetName.replace(/[,;.!?]+$/, "").trim();
       return `${prefix} ${cleanStreetName}`;
     }
 
-    const prefixMatch = text.match(
-      /^(?:pilne!?\s+)?(ul\.|ulica|al\.|aleja|os\.|osiedle|pl\.|plac)\s+([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s.-]+?)(?:\s+(?:mieszkanie|do|wolne|od|umeblowane|wynajmę|pilnie|pilne|kawalerkę|,|\d+).*)?$/i,
-    );
-    if (prefixMatch) {
+    const prefixMatch =
+      /^(?:pilne!?\s+)?(ul\.|ulica|al\.|aleja|os\.|osiedle|pl\.|plac)\s+([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s.-]+?)(?:\s+(?:mieszkanie|do|wolne|od|umeblowane|wynajmę|pilnie|pilne|kawalerkę|,|\d+).*)?$/i.exec(
+        text,
+      );
+    if (prefixMatch !== null) {
       const prefix = prefixMatch[1];
       const streetName = prefixMatch[2].trim();
-      const cleanStreetName = streetName.replace(/[,;.!?]+$/, '').trim();
+      const cleanStreetName = streetName.replace(/[,;.!?]+$/, "").trim();
       return `${prefix} ${cleanStreetName}`;
     }
 
-    const streetFirstPattern = text.match(
-      /^([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)*?)\s+(?:mieszkanie|do|wolne|od|umeblowane|wynajmę).*$/i,
-    );
-    if (streetFirstPattern) {
+    const streetFirstPattern =
+      /^([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)*?)\s+(?:mieszkanie|do|wolne|od|umeblowane|wynajmę).*$/i.exec(
+        text,
+      );
+    if (streetFirstPattern !== null) {
       const candidate = streetFirstPattern[1].trim();
       if (this.looksLikeValidStreetName(candidate)) {
         return candidate;
       }
     }
 
-    const complexPattern = text.match(
-      /^([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż.]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż.]*)*?)\s+(?:oś\.|os\.|ul\.|al\.)?.*?(?:wynajmę|mieszkanie|do\s+najmu).*$/i,
-    );
-    if (complexPattern) {
+    const complexPattern =
+      /^([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż.]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż.]*)*?)\s+(?:oś\.|os\.|ul\.|al\.)?.*?(?:wynajmę|mieszkanie|do\s+najmu).*$/i.exec(
+        text,
+      );
+    if (complexPattern !== null) {
       let candidate = complexPattern[1].trim();
 
-      candidate = candidate.replace(/\s+(oś\.|os\.)$/, '');
+      candidate = candidate.replace(/\s+(oś\.|os\.)$/, "");
       if (this.looksLikeValidStreetName(candidate)) {
         return candidate;
       }
     }
 
-    const simpleNameMatch = text.match(
-      /^([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{3,}(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{2,})*)/,
-    );
-    if (simpleNameMatch) {
+    const simpleNameMatch =
+      /^([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{3,}(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{2,})*)/.exec(
+        text,
+      );
+    if (simpleNameMatch !== null) {
       const candidate = simpleNameMatch[1].trim();
       if (
         this.looksLikeValidStreetName(candidate) &&
@@ -325,22 +335,22 @@ export class StreetNameCleaner {
 
   public static normalizeStreetName(streetName: string): string {
     if (!streetName) {
-      return '';
+      return "";
     }
 
     let normalized = this.cleanStreetName(streetName);
 
     normalized = normalized
-      .replace(/\bulica\b/gi, 'ul.')
-      .replace(/\baleja\b/gi, 'al.')
-      .replace(/\bosiedle\b/gi, 'os.')
-      .replace(/\bplac\b/gi, 'pl.')
-      .replace(/\bświętego\b/gi, 'św.')
-      .replace(/\bświętej\b/gi, 'św.')
-      .replace(/\bimienia\b/gi, 'im.');
+      .replaceAll(/\bulica\b/gi, "ul.")
+      .replaceAll(/\baleja\b/gi, "al.")
+      .replaceAll(/\bosiedle\b/gi, "os.")
+      .replaceAll(/\bplac\b/gi, "pl.")
+      .replaceAll(/\bświętego\b/gi, "św.")
+      .replaceAll(/\bświętej\b/gi, "św.")
+      .replaceAll(/\bimienia\b/gi, "im.");
 
-    normalized = normalized.replace(/\.([A-ZĄĆĘŁŃÓŚŹŻ])/g, '. $1');
-    normalized = normalized.replace(/\.\s{2,}/g, '. ');
+    normalized = normalized.replaceAll(/\.([A-ZĄĆĘŁŃÓŚŹŻ])/g, ". $1");
+    normalized = normalized.replaceAll(/\.\s{2,}/g, ". ");
 
     normalized = this.capitalizeStreetName(normalized);
 
@@ -351,7 +361,7 @@ export class StreetNameCleaner {
     return streetName
       .split(/\s+/)
       .map((word) => {
-        if (word.includes('.')) {
+        if (word.includes(".")) {
           return word.toLowerCase();
         }
 
@@ -365,7 +375,7 @@ export class StreetNameCleaner {
 
         return word.toUpperCase();
       })
-      .join(' ');
+      .join(" ");
   }
 
   public static isValidStreetName(streetName: string): boolean {

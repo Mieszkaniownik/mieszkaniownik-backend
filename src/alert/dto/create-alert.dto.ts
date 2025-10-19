@@ -1,24 +1,25 @@
 import {
-  IsString,
-  IsOptional,
-  IsDecimal,
-  IsInt,
-  IsBoolean,
-  IsEnum,
-  IsUrl,
-  IsArray,
-  Min,
-  Max,
-  MaxLength,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
-import {
   BuildingType,
   NotificationMethod,
   OwnerType,
   ParkingType,
-} from '@prisma/client';
-import { ApiProperty } from '@nestjs/swagger';
+} from "@prisma/client";
+import { Transform } from "class-transformer";
+import {
+  IsArray,
+  IsBoolean,
+  IsDecimal,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  MaxLength,
+  Min,
+} from "class-validator";
+
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateAlertDto {
   @ApiProperty()
@@ -37,52 +38,84 @@ export class CreateAlertDto {
   district?: string;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseFloat(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseFloat(String(value))
+      : undefined,
+  )
   @IsDecimal()
   @Min(0)
   maxPrice?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseFloat(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseFloat(String(value))
+      : undefined,
+  )
   @IsDecimal()
   @Min(0)
   minPrice?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseFloat(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseFloat(String(value))
+      : undefined,
+  )
   @IsDecimal()
   @Min(0)
   maxFootage?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseFloat(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseFloat(String(value))
+      : undefined,
+  )
   @IsDecimal()
   @Min(0)
   minFootage?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseInt(String(value))
+      : undefined,
+  )
   @IsInt()
   @Min(1)
   @Max(20)
   maxRooms?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseInt(String(value))
+      : undefined,
+  )
   @IsInt()
   @Min(1)
   @Max(20)
   minRooms?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseInt(String(value))
+      : undefined,
+  )
   @IsInt()
   @Min(0)
   @Max(50)
   maxFloor?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(String(value)) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseInt(String(value))
+      : undefined,
+  )
   @IsInt()
   @Min(0)
   @Max(50)

@@ -1,16 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
-import type { Page } from 'puppeteer';
-import { BuildingType } from '@prisma/client';
-import { DatabaseService } from '../database/database.service';
-import { MatchService } from '../match/match.service';
-import { ScraperService } from './scraper.service';
-import { StreetNameCleaner } from './services/street-name-cleaner';
-import { ScraperGeocodingService } from './services/scraper-geocoding.service';
-import { aiAddressExtractorService } from './services/ai-address-extractor.service';
-import { BrowserSetupService } from './services/browser-setup.service';
-import { ParameterParserService } from './services/parameter-parser.service';
-import { OfferService } from '../offer/offer.service';
-import { ScraperOfferMapperService } from './services/scraper-offer-mapper.service';
+import { BuildingType } from "@prisma/client";
+import type { Page } from "puppeteer";
+
+import { Injectable, Logger } from "@nestjs/common";
+
+import { DatabaseService } from "../database/database.service";
+import { MatchService } from "../match/match.service";
+import { OfferService } from "../offer/offer.service";
+import { ScraperService } from "./scraper.service";
+import { aiAddressExtractorService } from "./services/ai-address-extractor.service";
+import { BrowserSetupService } from "./services/browser-setup.service";
+import { ParameterParserService } from "./services/parameter-parser.service";
+import { ScraperGeocodingService } from "./services/scraper-geocoding.service";
+import { ScraperOfferMapperService } from "./services/scraper-offer-mapper.service";
+import { StreetNameCleaner } from "./services/street-name-cleaner";
 
 type ScrapedDetails = Record<string, string>;
 
@@ -32,7 +34,7 @@ interface ScrapedData {
 }
 
 type OtodomScrapedData = ScrapedData & {
-  source: 'otodom';
+  source: "otodom";
   footage: string | null;
   address: string | null;
   contact: string | null;
@@ -52,15 +54,15 @@ export class ScraperProcessor {
     private readonly geocodingService: ScraperGeocodingService,
     private readonly googleAiService: aiAddressExtractorService,
     private readonly browserSetup: BrowserSetupService,
-    private readonly paramParser: ParameterParserService,
+    private readonly parameterParser: ParameterParserService,
   ) {}
 
   private async generateSummary(
     title: string,
     description: string | null,
   ): Promise<string | null> {
-    if (!description || description.trim() === '') {
-      this.logger.debug('No description available for summary generation');
+    if (description === null || description.trim() === "") {
+      this.logger.debug("No description available for summary generation");
       return null;
     }
 
@@ -68,7 +70,7 @@ export class ScraperProcessor {
       return await this.googleAiService.generateSummary(title, description);
     } catch (error) {
       this.logger.warn(
-        `Failed to generate summary: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to generate summary: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       return null;
     }
@@ -84,18 +86,18 @@ export class ScraperProcessor {
   public async processOlxOffer(page: Page, url: string, isNew = false) {
     try {
       const pageDebug = await page.evaluate(() => {
-        const allSpans = Array.from(document.querySelectorAll('span'));
+        const allSpans = [...document.querySelectorAll("span")];
         const spanInfo = allSpans
           .filter(
             (span) =>
-              span.textContent?.includes('października') ||
-              span.textContent?.includes('dzisiaj') ||
-              span.textContent?.includes('wczoraj'),
+              span.textContent.includes("października") ||
+              span.textContent.includes("dzisiaj") ||
+              span.textContent.includes("wczoraj"),
           )
           .map((span) => ({
-            text: span.textContent?.trim(),
-            testId: span.getAttribute('data-testid'),
-            dataCy: span.getAttribute('data-cy'),
+            text: span.textContent.trim(),
+            testId: span.dataset.testid,
+            dataCy: span.dataset.cy,
             className: span.className,
             parentClass: span.parentElement?.className,
           }));
@@ -103,17 +105,19 @@ export class ScraperProcessor {
         return {
           foundSpans: spanInfo.length,
           spans: spanInfo,
-          hasTestIdElement: !!document.querySelector(
-            '[data-testid="ad-posted-at"]',
+          hasTestIdElement: Boolean(
+            document.querySelector('[data-testid="ad-posted-at"]'),
           ),
-          bodySnippet: document.body.innerHTML.substring(0, 2000),
+          bodySnippet: document.body.innerHTML.slice(0, 2000),
         };
       });
 
       this.logger.log(
-        `PAGE DEBUG: Found ${pageDebug.foundSpans} potential date spans`,
+        `PAGE DEBUG: Found ${String(pageDebug.foundSpans)} potential date spans`,
       );
-      this.logger.log(`Has testid element: ${pageDebug.hasTestIdElement}`);
+      this.logger.log(
+        `Has testid element: ${String(pageDebug.hasTestIdElement)}`,
+      );
       if (pageDebug.spans.length > 0) {
         this.logger.log(
           `Date spans:`,
@@ -125,15 +129,15 @@ export class ScraperProcessor {
         await page.waitForSelector('[data-testid="ad-posted-at"]', {
           timeout: 5000,
         });
-        this.logger.log('Date element found, proceeding with scraping');
+        this.logger.log("Date element found, proceeding with scraping");
       } catch {
         this.logger.warn(
-          'Date element not found after waiting, will attempt scraping anyway',
+          "Date element not found after waiting, will attempt scraping anyway",
         );
       }
 
       const data = await page.evaluate(() => {
-        type ScrapedResult = {
+        interface ScrapedResult {
           title: string | null;
           price: number | null;
           description: string | null;
@@ -149,72 +153,75 @@ export class ScraperProcessor {
             memberSince: string | null;
             lastSeen: string | null;
           };
-        };
+        }
 
         const titleElement = document.querySelector(
           '[data-testid="offer_title"] h4',
         );
-        const title = titleElement?.textContent?.trim() || null;
+        const title = titleElement?.textContent.trim() ?? null;
 
         const priceElement = document.querySelector(
           '[data-testid="ad-price-container"] h3',
         );
-        const priceText = priceElement?.textContent?.trim() || '';
-        const price = priceText ? parseInt(priceText.replace(/\D/g, '')) : null;
+        const priceText = priceElement?.textContent.trim() ?? "";
+        const price =
+          priceText === ""
+            ? null
+            : Number.parseInt(priceText.replaceAll(/\D/g, ""));
 
         const negotiableElement = document.querySelector(
           '[data-testid="ad-price-container"] .css-nw4rgq',
         );
-        const negotiable = Boolean(
-          negotiableElement?.textContent?.trim().toLowerCase() ===
-            'do negocjacji',
-        );
+        const negotiable =
+          negotiableElement?.textContent.trim().toLowerCase() ===
+          "do negocjacji";
 
         const createdAtElement = document.querySelector(
           '[data-testid="ad-posted-at"]',
         );
-        let dateText = createdAtElement?.textContent?.trim() || '';
+        let dateText = createdAtElement?.textContent.trim() ?? "";
         let createdAt: string | null = null;
         const dateDebug: string[] = [];
 
-        dateDebug.push('=== DATE EXTRACTION DEBUG ===');
-        dateDebug.push(`Date element found: ${!!createdAtElement}`);
+        dateDebug.push(
+          "=== DATE EXTRACTION DEBUG ===",
+          `Date element found: ${String(createdAtElement !== null)}`,
+        );
 
-        if (!createdAtElement) {
-          dateDebug.push('Trying alternative selectors...');
+        if (createdAtElement === null) {
+          dateDebug.push("Trying alternative selectors...");
 
           const altElement1 = document.querySelector(
             '[data-cy="ad-posted-at"]',
           );
-          if (altElement1) {
+          if (altElement1 !== null) {
             dateDebug.push('Found with data-cy="ad-posted-at"');
-            dateText = altElement1.textContent?.trim() || '';
+            dateText = altElement1.textContent.trim();
           }
 
-          const parentContainer = document.querySelector('.css-1yzzyg0');
-          if (parentContainer && !dateText) {
-            dateDebug.push('Found parent container .css-1yzzyg0');
-            const spans = parentContainer.querySelectorAll('span');
-            spans.forEach((span, idx) => {
-              const text = span.textContent?.trim() || '';
-              dateDebug.push(`  Span ${idx}: "${text.substring(0, 50)}"`);
+          const parentContainer = document.querySelector(".css-1yzzyg0");
+          if (parentContainer !== null && dateText === "") {
+            dateDebug.push("Found parent container .css-1yzzyg0");
+            const spans = parentContainer.querySelectorAll("span");
+            for (const [index, span] of spans.entries()) {
+              const text = span.textContent.trim();
+              dateDebug.push(`  Span ${String(index)}: "${text.slice(0, 50)}"`);
               if (
-                text.match(/\d+\s+\w+\s+\d{4}/) ||
-                text.toLowerCase().includes('dzisiaj') ||
-                text.toLowerCase().includes('wczoraj')
+                /\d+\s+\w+\s+\d{4}/.test(text) ||
+                text.toLowerCase().includes("dzisiaj") ||
+                text.toLowerCase().includes("wczoraj")
               ) {
                 dateText = text;
-                dateDebug.push(`  Using span ${idx} as date source`);
+                dateDebug.push(`  Using span ${String(index)} as date source`);
               }
-            });
+            }
           }
 
-          if (!dateText) {
-            const allText = document.body.innerText;
-            const dodaneMatch = allText.match(
-              /Dodane\s+(\d+\s+\w+\s+\d{4}|dzisiaj|wczoraj)/i,
-            );
-            if (dodaneMatch) {
+          if (dateText === "") {
+            const allText = document.body.textContent;
+            const dodaneMatch =
+              /Dodane\s+(\d+\s+\w+\s+\d{4}|dzisiaj|wczoraj)/i.exec(allText);
+            if (dodaneMatch !== null) {
               dateText = dodaneMatch[1];
               dateDebug.push(
                 `Found date via "Dodane" text search: "${dateText}"`,
@@ -223,25 +230,25 @@ export class ScraperProcessor {
           }
         }
 
-        dateDebug.push(`Raw date text: "${dateText}"`);
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
+        const dateChars = [...dateText];
         dateDebug.push(
-          `Raw date charCodes: ${Array.from(dateText)
-            .map((c) => c.charCodeAt(0))
-            .join(',')}`,
-        );
-        dateDebug.push(
-          `Element HTML: ${createdAtElement?.outerHTML?.substring(0, 200) || 'N/A'}`,
+          `Raw date text: "${dateText}"`,
+          `Raw date charCodes: ${dateChars.map((c) => String(c.codePointAt(0) ?? 0)).join(",")}`,
+          `Element HTML: ${createdAtElement?.outerHTML.slice(0, 200) ?? "N/A"}`,
         );
 
-        dateText = dateText.replace(/^dodane\s+/i, '').trim();
+        dateText = dateText.replace(/^dodane\s+/i, "").trim();
         dateDebug.push(`Cleaned date text: "${dateText}"`);
 
-        if (dateText) {
+        if (dateText === "") {
+          dateDebug.push("No date text found");
+        } else {
           const now = new Date();
 
           if (
-            dateText.toLowerCase().includes('dzisiaj') ||
-            dateText.toLowerCase().includes('dziś')
+            dateText.toLowerCase().includes("dzisiaj") ||
+            dateText.toLowerCase().includes("dziś")
           ) {
             createdAt = new Date(
               now.getFullYear(),
@@ -249,7 +256,7 @@ export class ScraperProcessor {
               now.getDate(),
             ).toISOString();
             dateDebug.push(`Date is TODAY: ${createdAt}`);
-          } else if (dateText.toLowerCase().includes('wczoraj')) {
+          } else if (dateText.toLowerCase().includes("wczoraj")) {
             const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             createdAt = new Date(
@@ -275,112 +282,105 @@ export class ScraperProcessor {
               grudnia: 11,
             };
 
-            const normalizedDate = dateText.replace(/\u00A0/g, ' ');
+            const normalizedDate = dateText.replaceAll("\u00A0", " ");
             dateDebug.push(`Normalized date: "${normalizedDate}"`);
 
-            const match = normalizedDate.match(
-              /(\d+)\s+([a-ząćęłńóśźż]+)\s+(\d+)/i,
+            const match = /(\d+)\s+([a-ząćęłńóśźż]+)\s+(\d+)/i.exec(
+              normalizedDate,
             );
             dateDebug.push(
-              `Date regex match result: ${match ? 'MATCHED' : 'NO MATCH'}`,
+              `Date regex match result: ${match === null ? "NO MATCH" : "MATCHED"}`,
             );
-            if (match) {
+            if (match === null) {
+              dateDebug.push(`Date regex did not match: "${normalizedDate}"`);
+            } else {
               dateDebug.push(
                 `Match groups: [0]="${match[0]}", [1]="${match[1]}", [2]="${match[2]}", [3]="${match[3]}"`,
               );
-              const day = parseInt(match[1]);
+              const day = Number.parseInt(match[1]);
               let monthName = match[2].toLowerCase();
 
               monthName = monthName
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
+                .normalize("NFD")
+                .replaceAll(/[\u0300-\u036F]/g, "");
 
               dateDebug.push(`Normalized month name: "${monthName}"`);
-              const month = monthMap[monthName];
-              const year = parseInt(match[3]);
+              const month =
+                monthName in monthMap ? monthMap[monthName] : undefined;
+              const year = Number.parseInt(match[3]);
               dateDebug.push(
-                `Parsed values: day=${day}, month=${month} (${monthName}), year=${year}`,
+                `Parsed values: day=${String(day)}, month=${String(month)}, year=${String(year)}`,
               );
-              if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+              if (
+                !Number.isNaN(day) &&
+                !Number.isNaN(year) &&
+                month !== undefined
+              ) {
                 createdAt = new Date(year, month, day).toISOString();
                 dateDebug.push(
-                  `Date parsed: ${day} ${monthName} ${year} -> ${createdAt}`,
+                  `Date parsed: ${String(day)} ${monthName} ${String(year)} -> ${createdAt}`,
                 );
               } else {
                 dateDebug.push(
-                  `Date parsing failed - invalid values: day=${day}, month=${month}, year=${year}`,
+                  `Date parsing failed - invalid values: day=${String(day)}, month=${String(month)}, year=${String(year)}`,
                 );
               }
-            } else {
-              dateDebug.push(`Date regex did not match: "${normalizedDate}"`);
             }
           }
-        } else {
-          dateDebug.push('No date text found');
         }
 
-        dateDebug.push(`=== FINAL createdAt: ${createdAt} ===`);
+        dateDebug.push(`=== FINAL createdAt: ${String(createdAt)} ===`);
 
         const descElement = document.querySelector(
           '[data-cy="ad_description"] .css-19duwlz',
         );
-        const description = descElement?.textContent?.trim() || null;
+        const description = descElement?.textContent.trim() ?? null;
 
         const parameters: Record<string, string> = {};
-        const paramElements = document.querySelectorAll(
+        const parameterElements = document.querySelectorAll(
           '[data-testid="ad-parameters-container"] p.css-13x8d99',
         );
 
-        paramElements.forEach((elem, index) => {
-          const text = elem.textContent?.trim() || '';
-          console.log(`Parameter element ${index}:`, {
-            text,
-            innerHTML: elem.innerHTML,
-            hasSpanChild: !!elem.querySelector('span:not([class])'),
-            textLength: text.length,
-            charCodes: Array.from(text)
-              .map((c) => c.charCodeAt(0))
-              .join(','),
-          });
+        for (const element of parameterElements) {
+          const text = element.textContent.trim();
 
-          if (elem.querySelector('span:not([class])')) {
-            const value = elem.querySelector('span')?.textContent?.trim();
-            if (value) {
-              parameters[value] = 'Tak';
-              console.log(`Added span parameter: "${value}" = "Tak"`);
+          const spanElement = element.querySelector("span:not([class])");
+          if (spanElement !== null) {
+            const spanQuery = element.querySelector("span");
+            if (spanQuery !== null) {
+              const value = spanQuery.textContent.trim();
+              if (value !== "") {
+                parameters[value] = "Tak";
+              }
             }
-            return;
+            continue;
           }
 
-          const parts = text.split(':');
-          console.log(`Split by colon - parts:`, parts);
+          const parts = text.split(":");
           if (parts.length === 2) {
             const key = parts[0].trim();
             const value = parts[1].trim();
-            if (key && value) {
+            if (key !== "" && value !== "") {
               parameters[key] = value;
-              console.log(`Added colon parameter: "${key}" = "${value}"`);
             }
-          } else if (text.includes(' ')) {
-            const [key, value] = text.split(' ');
-            if (key && value) {
+          } else if (text.includes(" ")) {
+            const [key, value] = text.split(" ");
+            if (key !== "" && value !== "") {
               parameters[key] = value;
-              console.log(`Added space parameter: "${key}" = "${value}"`);
             }
-          } else if (text) {
-            parameters[text] = 'Tak';
-            console.log(`Added flag parameter: "${text}" = "Tak"`);
+          } else if (text !== "") {
+            parameters[text] = "Tak";
           }
-        });
+        }
 
-        const locationElement = document.querySelector('.css-9pna1a');
-        const locationText = locationElement?.textContent?.trim() || '';
+        const locationElement = document.querySelector(".css-9pna1a");
+        const locationText = locationElement?.textContent.trim() ?? "";
 
-        let city = '';
-        let district = '';
+        let city = "";
+        let district = "";
 
-        if (locationText) {
-          const parts = locationText.split(',');
+        if (locationText !== "") {
+          const parts = locationText.split(",");
           if (parts.length >= 2) {
             city = parts[0].trim();
             district = parts[1].trim();
@@ -389,79 +389,51 @@ export class ScraperProcessor {
           }
         }
 
-        const images = Array.from(
-          document.querySelectorAll('[data-testid="ad-photo"] img'),
-        )
-          .map((img) => img.getAttribute('src'))
-          .filter((src): src is string => src !== null);
+        const images = [
+          ...document.querySelectorAll('[data-testid="ad-photo"] img'),
+        ]
+          .map((img) => img.getAttribute("src"))
+          .filter((source): source is string => source !== null);
 
         const sellerName =
           document
             .querySelector('[data-testid="user-profile-user-name"]')
-            ?.textContent?.trim() || null;
+            ?.textContent.trim() ?? null;
         const memberSince =
           document
             .querySelector('[data-testid="member-since"] span')
-            ?.textContent?.trim() || null;
+            ?.textContent.trim() ?? null;
         const lastSeen =
           document
             .querySelector('[data-testid="lastSeenBox"] .css-1p85e15')
-            ?.textContent?.trim() || null;
+            ?.textContent.trim() ?? null;
 
         let views = 0;
-        let viewsExtractionMethod = 'none';
-
-        console.log('=== VIEWS EXTRACTION UPDATED 2025 ===');
-        console.log('Page URL:', window.location.href);
-        console.log('Page has been scrolled to trigger lazy loading');
+        let viewsExtractionMethod = "none";
 
         const inactiveAdElement = document.querySelector(
           '[data-testid="ad-inactive-msg"]',
         );
-        if (inactiveAdElement) {
-          console.log('Method 1 - Ad inactive, views not available');
+        if (inactiveAdElement === null) {
           views = 0;
-          viewsExtractionMethod = 'inactive-ad';
-        } else {
-          console.log(
-            'Method 1 - Ad is active, proceeding with views extraction',
-          );
+          viewsExtractionMethod = "inactive-ad";
         }
 
         if (views === 0) {
           const selector = '[data-testid="page-view-counter"]';
           const element = document.querySelector(selector);
-          if (element) {
-            const text = element.textContent?.trim() || '';
-            console.log(
-              `Modern selector 3 - Found element with selector ${selector}:`,
-              text,
-            );
+          if (element !== null) {
+            const text = element.textContent.trim();
 
-            if (text.toLowerCase().includes('wyświetl')) {
-              const viewsMatch = text.match(/(\d+)/);
-              if (viewsMatch) {
-                views = parseInt(viewsMatch[1]);
-                viewsExtractionMethod = 'modern-selector-3';
-                console.log(
-                  'Modern selector 3 - SUCCESS extracted views:',
-                  views,
-                );
+            if (text.toLowerCase().includes("wyświetl")) {
+              const viewsMatch = /(\d+)/.exec(text);
+              if (viewsMatch !== null) {
+                views = Number.parseInt(viewsMatch[1]);
+                viewsExtractionMethod = "modern-selector-3";
               }
             }
           }
         }
-
-        console.log(
-          `Final views extraction result: views=${views}, method=${viewsExtractionMethod}, url=${window.location.href}`,
-        );
-
-        console.log('City extraction debug:', {
-          locationText,
-          extractedCity: city,
-          extractedDistrict: district,
-          url: window.location.href,
-        });
 
         return {
           title,
@@ -483,67 +455,52 @@ export class ScraperProcessor {
           dateDebug,
         } as ScrapedResult & {
           viewsExtractionMethod: string;
-          debugInfo: string[];
           dateDebug: string[];
         };
       });
 
-      if (!data) {
-        throw new Error('Failed to extract data from OLX page');
-      }
-
       const extractionData = data as typeof data & {
         viewsExtractionMethod: string;
-        debugInfo?: string[];
-        dateDebug?: string[];
+        dateDebug: string[];
       };
 
       this.logger.log(
-        `Date extraction result: ${data.createdAt ? `"${data.createdAt}"` : 'NULL'} for URL: ${url}`,
+        `Date extraction result: ${data.createdAt !== null && data.createdAt !== "" ? `"${data.createdAt}"` : "NULL"} for URL: ${url}`,
       );
 
       this.logger.log(
-        `DEBUG: dateDebug exists? ${!!extractionData.dateDebug}, length: ${extractionData.dateDebug?.length || 0}`,
+        `DEBUG: dateDebug length: ${String(extractionData.dateDebug.length)}`,
       );
 
-      if (extractionData.dateDebug && extractionData.dateDebug.length > 0) {
-        this.logger.log('DATE EXTRACTION DEBUG FROM BROWSER:');
-        extractionData.dateDebug.forEach((line) => {
+      if (extractionData.dateDebug.length > 0) {
+        this.logger.log("DATE EXTRACTION DEBUG FROM BROWSER:");
+        for (const line of extractionData.dateDebug) {
           this.logger.log(`   ${line}`);
-        });
+        }
       } else {
-        this.logger.warn('No date debug information returned from browser!');
+        this.logger.warn("No date debug information returned from browser!");
       }
 
       this.logger.log(
-        `Views extraction for ${url}: ${data.views} views using method: ${extractionData.viewsExtractionMethod}`,
+        `Views extraction for ${url}: ${String(data.views)} views using method: ${extractionData.viewsExtractionMethod}`,
       );
 
-      if (
-        extractionData.debugInfo &&
-        (data.views === 0 || process.env.DEBUG_VIEWS_EXTRACTION)
-      ) {
-        this.logger.debug(`Views extraction debug for ${url}:`);
-        extractionData.debugInfo.forEach((debugLine, index) => {
-          this.logger.debug(`   ${index + 1}. ${debugLine}`);
-        });
-      }
+      const parsed = this.parameterParser.parseOlxParameters(
+        data.rawParameters,
+      );
 
-      const parsed = this.paramParser.parseOlxParameters(data.rawParameters);
+      const findParameterValue = (targetKey: string) =>
+        this.parameterParser.findParamValue(data.rawParameters, targetKey);
 
-      const findParamValue = (targetKey: string) =>
-        this.paramParser.findParamValue(data.rawParameters, targetKey);
-
-      console.log('Final boolean values before database update:', {
+      this.logger.debug("Final boolean values before database update:", {
         elevator: parsed.elevator,
-        pets: parsed.pets,
-        furniture: parsed.furniture,
-        title: data.title || 'unknown',
-      });
 
-      if (!data) {
-        throw new Error('Failed to extract data from OLX page');
-      }
+        pets: parsed.pets,
+
+        furniture: parsed.furniture,
+        title:
+          data.title !== null && data.title !== "" ? data.title : "unknown",
+      });
 
       let extractedStreet: string | null = null;
       let extractedStreetNumber: string | null = null;
@@ -551,26 +508,28 @@ export class ScraperProcessor {
       let longitude: number | null = null;
 
       try {
-        if (data.title) {
+        if (data.title !== null && data.title !== "") {
           this.logger.debug(`Extracting address from: ${data.title}`);
           const addressResult = await this.scraperService.extractAddress(
             data.title,
-            data.description || undefined,
+            data.description !== null && data.description !== ""
+              ? data.description
+              : undefined,
           );
 
-          if (addressResult.street) {
+          if (addressResult.street !== undefined) {
             const cleanedStreet = StreetNameCleaner.normalizeStreetName(
               addressResult.street,
             );
 
             if (StreetNameCleaner.isValidStreetName(cleanedStreet)) {
               extractedStreet = cleanedStreet;
-              extractedStreetNumber = addressResult.streetNumber || null;
+              extractedStreetNumber = addressResult.streetNumber ?? null;
               this.logger.log(
-                `Address extracted: ${extractedStreet}${extractedStreetNumber ? ` ${extractedStreetNumber}` : ''} (confidence: ${addressResult.confidence})`,
+                `Address extracted: ${extractedStreet}${extractedStreetNumber === null ? "" : ` ${extractedStreetNumber}`} (confidence: ${String(addressResult.confidence)})`,
               );
 
-              const fullAddress = `${extractedStreet}${extractedStreetNumber ? ` ${extractedStreetNumber}` : ''}, ${data.city}`;
+              const fullAddress = `${extractedStreet}${extractedStreetNumber === null ? "" : ` ${extractedStreetNumber}`}, ${data.city}`;
               const coordinates = await this.geocodeAddress(
                 fullAddress,
                 data.city,
@@ -582,43 +541,43 @@ export class ScraperProcessor {
                 `Rejected invalid street after final cleaning: ${addressResult.street} -> ${cleanedStreet}`,
               );
             }
-          } else {
-            this.logger.debug(
-              'No address found in offer text - trying city-level geocoding',
-            );
-            if (data.city) {
-              const cityAddress = data.district
-                ? `${data.district}, ${data.city}`
-                : data.city;
-              const coordinates = await this.geocodeAddress(cityAddress);
-              latitude = coordinates.latitude;
-              longitude = coordinates.longitude;
-            }
           }
         }
       } catch (error) {
         this.logger.warn(
-          `Address extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Address extraction failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
 
-      const validCity =
-        data.city && data.city.trim() !== '' ? data.city.trim() : 'Nieznane';
+      const validCity = data.city.trim();
 
-      const finalCreatedAt = data.createdAt
-        ? new Date(data.createdAt)
-        : new Date();
+      const finalCreatedAt =
+        data.createdAt !== null && data.createdAt !== ""
+          ? new Date(data.createdAt)
+          : new Date();
 
-      const contactString = data.contact?.name
-        ? `${data.contact.name}${data.contact.memberSince ? ` - Na OLX od ${data.contact.memberSince}` : ''}${data.contact.lastSeen ? ` - ${data.contact.lastSeen}` : ''}`
-        : findParamValue('kontakt') || null;
+      const contactValue = findParameterValue("kontakt");
+      let contactString: string | null = null;
+      if (data.contact.name === null || data.contact.name === "") {
+        contactString = contactValue ?? null;
+      } else {
+        const memberPart =
+          data.contact.memberSince !== null && data.contact.memberSince !== ""
+            ? ` - Na OLX od ${data.contact.memberSince}`
+            : "";
+        const lastSeenPart =
+          data.contact.lastSeen !== null && data.contact.lastSeen !== ""
+            ? ` - ${data.contact.lastSeen}`
+            : "";
+        contactString = `${data.contact.name}${memberPart}${lastSeenPart}`;
+      }
 
       const summary = await this.generateSummary(
-        data.title || '',
-        data.description || '',
+        data.title ?? "",
+        data.description ?? "",
       );
 
-      console.log('Final boolean values before OfferService:', {
+      this.logger.debug("Final boolean values before OfferService:", {
         elevator: parsed.elevator,
         pets: parsed.pets,
         furniture: parsed.furniture,
@@ -626,24 +585,30 @@ export class ScraperProcessor {
       });
 
       const offerDto = this.mapperService.mapOlxToCreateOfferDto({
-        url: url,
-        title: data.title || '',
-        price: data.price || 0,
+        url,
+        title: data.title ?? "",
+        price: data.price ?? 0,
         city: validCity,
-        district: data.district || null,
-        footage: parsed.footage || 0,
-        description: data.description || '',
-        summary: summary,
+        district: data.district,
+        footage: parsed.footage ?? 0,
+        description: data.description ?? "",
+        summary,
         street: extractedStreet,
         streetNumber: extractedStreetNumber,
-        latitude: latitude,
-        longitude: longitude,
-        rooms: parsed.rooms ? parseInt(parsed.rooms) : null,
-        floor: parsed.floor ? parseInt(parsed.floor) : null,
+        latitude,
+        longitude,
+        rooms:
+          parsed.rooms !== null && parsed.rooms !== ""
+            ? Number.parseInt(parsed.rooms)
+            : null,
+        floor:
+          parsed.floor !== null && parsed.floor !== ""
+            ? Number.parseInt(parsed.floor)
+            : null,
         furniture: parsed.furniture,
         elevator: parsed.elevator,
         pets: parsed.pets,
-        negotiable: data.negotiable || false,
+        negotiable: data.negotiable,
         ownerType: parsed.ownerType,
         buildingType: parsed.buildingType,
         parkingType: parsed.parkingType,
@@ -651,48 +616,48 @@ export class ScraperProcessor {
         contact: contactString,
         views: data.views,
         createdAt: finalCreatedAt,
-        isNew: isNew,
-        images: data.images || [],
-        infoAdditional: findParamValue('informacje dodatkowe') || null,
-        furnishing: findParamValue('wyposażenie') || null,
-        media: findParamValue('media') || null,
+        isNew,
+        images: data.images,
+        infoAdditional: findParameterValue("informacje dodatkowe") ?? null,
+        furnishing: findParameterValue("wyposażenie") ?? null,
+        media: findParameterValue("media") ?? null,
       });
 
       const { offer: createdOffer, created } =
         await this.offerService.findOneOrCreate(offerDto);
 
       this.logger.log(
-        `${created ? 'Created' : 'Updated'} OLX offer ${createdOffer.id} for ${url} - Views: ${data.views}`,
+        `${created ? "Created" : "Updated"} OLX offer ${String(createdOffer.id)} for ${url} - Views: ${String(data.views)}`,
       );
 
       if (!created) {
         this.logger.debug(
-          `Updated existing offer ${createdOffer.id} for URL: ${url}`,
+          `Updated existing offer ${String(createdOffer.id)} for URL: ${url}`,
         );
       }
 
-      if (createdOffer?.id) {
+      if (created || createdOffer.id) {
         try {
           const matchCount = await this.matchService.processNewOffer(
             createdOffer.id,
           );
           this.logger.log(
-            `Processed ${matchCount} matches for offer ${createdOffer.id}`,
+            `Processed ${String(matchCount)} matches for offer ${String(createdOffer.id)}`,
           );
         } catch (error) {
           this.logger.error(
-            `Failed to process matches for offer ${createdOffer.id}:`,
+            `Failed to process matches for offer ${String(createdOffer.id)}:`,
             error,
           );
         }
       }
 
       this.logger.log(
-        `OLX scraping completed for ${url} - Offer ID: ${createdOffer?.id}, Views: ${data.views}, Method: ${extractionData.viewsExtractionMethod}`,
+        `OLX scraping completed for ${url} - Offer ID: ${String(createdOffer.id)}, Views: ${String(data.views)}, Method: ${extractionData.viewsExtractionMethod}`,
       );
     } catch (error) {
       this.logger.error(
-        `Error processing OLX offer: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Error processing OLX offer: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       throw error;
     }
@@ -702,93 +667,99 @@ export class ScraperProcessor {
     try {
       const data = await page.evaluate(() => {
         const priceElement =
-          document.querySelector('[data-cy="adPageHeaderPrice"]') ||
-          document.querySelector('strong[aria-label="Cena"]') ||
-          document.querySelector('.css-1o51x5a.elm6lnc1') ||
-          document.querySelector('.elm6lnc1');
-        const price = priceElement?.textContent?.trim() ?? null;
+          document.querySelector('[data-cy="adPageHeaderPrice"]') ??
+          document.querySelector('strong[aria-label="Cena"]') ??
+          document.querySelector(".css-1o51x5a.elm6lnc1") ??
+          document.querySelector(".elm6lnc1");
+        const price = priceElement?.textContent.trim() ?? null;
 
         const titleElement =
-          document.querySelector('[data-cy="adPageAdTitle"]') ||
-          document.querySelector('h1.css-4utb9r.e1dqm4hr1') ||
-          document.querySelector('h1');
-        const title = titleElement?.textContent?.trim() ?? null;
+          document.querySelector('[data-cy="adPageAdTitle"]') ??
+          document.querySelector("h1.css-4utb9r.e1dqm4hr1") ??
+          document.querySelector("h1");
+        const title = titleElement?.textContent.trim() ?? null;
 
         const addressElement =
-          document.querySelector('a[href="#map"].css-1eowip8.e1aypsbg1') ||
-          document.querySelector('.e1aypsbg1') ||
+          document.querySelector('a[href="#map"].css-1eowip8.e1aypsbg1') ??
+          document.querySelector(".e1aypsbg1") ??
           document.querySelector('a[href="#map"]');
-        const address = addressElement?.textContent?.trim() ?? null;
+        const address = addressElement?.textContent.trim() ?? null;
 
         const descElement =
-          document.querySelector('[data-cy="adPageAdDescription"]') ||
-          document.querySelector('.css-1nuh7jg.e1op7yyl1') ||
-          document.querySelector('.e1op7yyl1');
-        const description = descElement?.textContent?.trim() ?? null;
+          document.querySelector('[data-cy="adPageAdDescription"]') ??
+          document.querySelector(".css-1nuh7jg.e1op7yyl1") ??
+          document.querySelector(".e1op7yyl1");
+        const description = descElement?.textContent.trim() ?? null;
 
-        const footageElement = Array.from(
-          document.querySelectorAll('.css-1okys8k.e1mm5aqc2, .e1mm5aqc2'),
-        ).find((el) => {
-          const text = el.textContent?.toLowerCase() || '';
-          return text.includes('m²') && /\d+\s*m²/.test(text);
+        const footageElement = [
+          ...document.querySelectorAll(".css-1okys8k.e1mm5aqc2, .e1mm5aqc2"),
+        ].find((element) => {
+          const text = element.textContent.toLowerCase();
+          return text.includes("m²") && /\d+\s*m²/.test(text);
         });
-        const footage = footageElement?.textContent?.trim() ?? null;
+        const footage = footageElement?.textContent.trim() ?? null;
 
-        const images = Array.from(document.querySelectorAll('img'))
-          .map((img) => img.getAttribute('src'))
+        const images = [...document.querySelectorAll("img")]
+          .map((img) => img.getAttribute("src"))
           .filter(
-            (src) => src && (src.includes('otodom') || src.includes('cdn')),
+            (source): source is string =>
+              source !== null &&
+              (source.includes("otodom") || source.includes("cdn")),
           )
           .slice(0, 10);
 
         let views = 0;
         const viewsDebug: string[] = [];
-        viewsDebug.push('=== OTODOM VIEWS EXTRACTION DEBUG ===');
+        viewsDebug.push("=== OTODOM VIEWS EXTRACTION DEBUG ===");
 
         const viewsElement = document.querySelector(
-          '.css-lcnm6u.e3km50a2, .e3km50a2',
+          ".css-lcnm6u.e3km50a2, .e3km50a2",
         );
-        if (viewsElement) {
-          const viewsText = viewsElement.textContent?.trim() || '';
-          viewsDebug.push(`Method 1: Found views element: "${viewsText}"`);
-          const viewsMatch = viewsText.match(/(\d+)/);
-          if (viewsMatch) {
-            views = parseInt(viewsMatch[1]);
-            viewsDebug.push(`  Extracted views: ${views}`);
-          }
-        } else {
-          viewsDebug.push('Method 1: Views element not found');
+        if (viewsElement === null) {
+          viewsDebug.push("Method 1: Views element not found");
 
           const statsContainer = document.querySelector(
-            '.css-1jzjbfr.e3km50a0, .e3km50a0',
+            ".css-1jzjbfr.e3km50a0, .e3km50a0",
           );
-          if (statsContainer) {
-            viewsDebug.push(
-              'Method 2: Found statistics container, searching for views',
-            );
-            const allText = statsContainer.textContent || '';
-            const viewsMatch = allText.match(/(\d+)\s*wyświetl/i);
-            if (viewsMatch) {
-              views = parseInt(viewsMatch[1]);
-              viewsDebug.push(`  Extracted views from container: ${views}`);
-            } else {
-              viewsDebug.push('  No views pattern found in container');
-            }
+          if (statsContainer === null) {
+            viewsDebug.push("Method 2: Statistics container not found");
           } else {
-            viewsDebug.push('Method 2: Statistics container not found');
+            viewsDebug.push(
+              "Method 2: Found statistics container, searching for views",
+            );
+            const allText = statsContainer.textContent;
+            const viewsMatch = /(\d+)\s*wyświetl/i.exec(allText);
+            if (viewsMatch === null) {
+              viewsDebug.push("  No views pattern found in container");
+            } else {
+              views = Number.parseInt(viewsMatch[1]);
+              viewsDebug.push(
+                `  Extracted views from container: ${String(views)}`,
+              );
+            }
+          }
+        } else {
+          const viewsText = viewsElement.textContent.trim();
+          viewsDebug.push(`Method 1: Found views element: "${viewsText}"`);
+          const viewsMatch = /(\d+)/.exec(viewsText);
+          if (viewsMatch === null) {
+            viewsDebug.push("  No match in views element");
+          } else {
+            views = Number.parseInt(viewsMatch[1]);
+            viewsDebug.push(`  Extracted views: ${String(views)}`);
           }
         }
 
         if (views === 0) {
-          viewsDebug.push('Method 3: Searching entire page for views...');
-          const bodyText = document.body.textContent || '';
+          viewsDebug.push("Method 3: Searching entire page for views...");
+          const bodyText = document.body.textContent;
           const viewsPattern = /(\d+)\s*wyświetl/i;
-          const match = bodyText.match(viewsPattern);
-          if (match) {
-            views = parseInt(match[1]);
-            viewsDebug.push(`  Method 3 success: ${views} views`);
+          const match = viewsPattern.exec(bodyText);
+          if (match === null) {
+            viewsDebug.push("  Method 3: No match found");
           } else {
-            viewsDebug.push('  No views pattern found in page');
+            views = Number.parseInt(match[1]);
+            viewsDebug.push(`  Method 3 success: ${String(views)} views`);
           }
         }
 
@@ -799,15 +770,14 @@ export class ScraperProcessor {
           const allElements = document.querySelectorAll(
             '[class*="e3km50a"], [class*="stat"], [class*="view"]',
           );
-          for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i];
-            const text = el.textContent?.toLowerCase() || '';
-            if (text.includes('wyświetl')) {
-              const numMatch = text.match(/(\d+)/);
-              if (numMatch) {
-                views = parseInt(numMatch[1]);
+          for (const element of allElements) {
+            const text = element.textContent.toLowerCase();
+            if (text.includes("wyświetl")) {
+              const numberMatch = /(\d+)/.exec(text);
+              if (numberMatch !== null) {
+                views = Number.parseInt(numberMatch[1]);
                 viewsDebug.push(
-                  `  Method 4 success: Found ${views} views near "wyświetleń"`,
+                  `  Method 4 success: Found ${String(views)} views near "wyświetleń"`,
                 );
                 break;
               }
@@ -820,96 +790,99 @@ export class ScraperProcessor {
 
         if (views === 0) {
           viewsDebug.push(
-            'All methods failed - No views found, defaulting to 0',
-          );
-          viewsDebug.push(
-            'This may indicate CloudFront blocking or page structure change',
+            "All methods failed - No views found, defaulting to 0",
+            "This may indicate CloudFront blocking or page structure change",
           );
         } else {
-          viewsDebug.push(`Successfully extracted ${views} views`);
+          viewsDebug.push(`Successfully extracted ${String(views)} views`);
         }
 
-        viewsDebug.push(`=== FINAL VIEWS: ${views} ===`);
+        viewsDebug.push(`=== FINAL VIEWS: ${String(views)} ===`);
 
         let createdAt: string | null = null;
         const dateDebug: string[] = [];
-        dateDebug.push('=== OTODOM DATE EXTRACTION DEBUG ===');
+        dateDebug.push("=== OTODOM DATE EXTRACTION DEBUG ===");
 
         const historyRows = document.querySelectorAll(
-          '.css-17wo1v5.etrn3wv7, .etrn3wv7',
+          ".css-17wo1v5.etrn3wv7, .etrn3wv7",
         );
         dateDebug.push(
-          `Method 1: Found ${historyRows.length} history rows in "Historia i statystyki"`,
+          `Method 1: Found ${String(historyRows.length)} history rows in "Historia i statystyki"`,
         );
 
-        for (let i = 0; i < historyRows.length; i++) {
-          const row = historyRows[i];
-          const cells = Array.from(row.querySelectorAll('.etrn3wv2'));
+        for (const [index, row] of historyRows.entries()) {
+          const cells = [...row.querySelectorAll(".etrn3wv2")];
 
-          dateDebug.push(`  Row ${i}: Found ${cells.length} cells`);
+          dateDebug.push(
+            `  Row ${String(index)}: Found ${String(cells.length)} cells`,
+          );
 
           if (cells.length >= 2) {
             const dateCell = cells[0];
             const actionCell = cells[1];
 
-            const dateText = dateCell.textContent?.trim() || '';
-            const actionText = actionCell.textContent?.trim() || '';
+            const dateText = dateCell.textContent.trim();
+            const actionText = actionCell.textContent.trim();
 
             dateDebug.push(
-              `  Row ${i}: date="${dateText}", action="${actionText}"`,
+              `  Row ${String(index)}: date="${dateText}", action="${actionText}"`,
             );
 
             if (
-              actionText.toLowerCase().includes('dodanie') &&
-              actionText.toLowerCase().includes('ogłoszenia')
+              actionText.toLowerCase().includes("dodanie") &&
+              actionText.toLowerCase().includes("ogłoszenia")
             ) {
               dateDebug.push(`  ✓ Found "Dodanie ogłoszenia" row`);
-              const dateMatch = dateText.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-              if (dateMatch) {
-                const day = parseInt(dateMatch[1]);
-                const month = parseInt(dateMatch[2]) - 1;
-                const year = parseInt(dateMatch[3]);
+              const dateMatch = /(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(dateText);
+              if (dateMatch === null) {
+                dateDebug.push(`  Date format not matched: "${dateText}"`);
+              } else {
+                const day = Number.parseInt(dateMatch[1]);
+                const month = Number.parseInt(dateMatch[2]) - 1;
+                const year = Number.parseInt(dateMatch[3]);
 
                 createdAt = new Date(Date.UTC(year, month, day)).toISOString();
                 dateDebug.push(
-                  `  Parsed date: ${day}.${month + 1}.${year} -> ${createdAt}`,
+                  `  Parsed date: ${String(day)}.${String(month + 1)}.${String(year)} -> ${createdAt}`,
                 );
                 break;
-              } else {
-                dateDebug.push(`  Date format not matched: "${dateText}"`);
               }
             }
           }
         }
 
-        if (!createdAt) {
+        if (createdAt === null) {
           dateDebug.push(
-            'Method 2: Trying alternative history row selectors...',
+            "Method 2: Trying alternative history row selectors...",
           );
           const altHistoryRows = document.querySelectorAll(
             '[class*="etrn3wv"], div[class*="history"] tr, table tr',
           );
           dateDebug.push(
-            `  Found ${altHistoryRows.length} alternative history rows`,
+            `  Found ${String(altHistoryRows.length)} alternative history rows`,
           );
 
-          for (let i = 0; i < Math.min(altHistoryRows.length, 20); i++) {
-            const row = altHistoryRows[i];
-            const rowText = row.textContent?.toLowerCase() || '';
+          for (
+            let index = 0;
+            index < Math.min(altHistoryRows.length, 20);
+            index++
+          ) {
+            const row = altHistoryRows[index];
+            const rowText = row.textContent.toLowerCase();
 
-            if (rowText.includes('dodanie') && rowText.includes('ogłoszenia')) {
-              dateDebug.push(`  Found potential row at index ${i}`);
-              const dateMatch = row.textContent?.match(
-                /(\d{1,2})\.(\d{1,2})\.(\d{4})/,
+            if (rowText.includes("dodanie") && rowText.includes("ogłoszenia")) {
+              dateDebug.push(`  Found potential row at index ${String(index)}`);
+              const dateMatch = /(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(
+                row.textContent,
               );
-              if (dateMatch) {
-                const day = parseInt(dateMatch[1]);
-                const month = parseInt(dateMatch[2]) - 1;
-                const year = parseInt(dateMatch[3]);
+              if (dateMatch !== null) {
+                const day = Number.parseInt(dateMatch[1]);
+                const month = Number.parseInt(dateMatch[2]) - 1;
+                const year = Number.parseInt(dateMatch[3]);
 
                 createdAt = new Date(Date.UTC(year, month, day)).toISOString();
                 dateDebug.push(
-                  `  ✓ Method 2 success: ${day}.${month + 1}.${year} -> ${createdAt}`,
+                  `  ✓ Method 2 success: ${String(day)}.${String(month + 1)}.${String(year)} -> ${createdAt}`,
                 );
                 break;
               }
@@ -917,326 +890,345 @@ export class ScraperProcessor {
           }
         }
 
-        if (!createdAt) {
+        if (createdAt === null) {
           dateDebug.push(
-            'Method 3: Searching entire page content for creation date...',
+            "Method 3: Searching entire page content for creation date...",
           );
-          const bodyText = document.body.textContent || '';
+          const bodyText = document.body.textContent;
           const creationPattern =
             /Dodanie\s+ogłoszenia[\s\S]{0,100}?(\d{1,2})\.(\d{1,2})\.(\d{4})/i;
-          const match = bodyText.match(creationPattern);
+          const match = creationPattern.exec(bodyText);
 
-          if (match) {
-            const day = parseInt(match[1]);
-            const month = parseInt(match[2]) - 1;
-            const year = parseInt(match[3]);
+          if (match === null) {
+            dateDebug.push("  No date pattern found in page content");
+          } else {
+            const day = Number.parseInt(match[1]);
+            const month = Number.parseInt(match[2]) - 1;
+            const year = Number.parseInt(match[3]);
 
             createdAt = new Date(Date.UTC(year, month, day)).toISOString();
             dateDebug.push(
-              `  Method 3 success: ${day}.${month + 1}.${year} -> ${createdAt}`,
+              `  Method 3 success: ${String(day)}.${String(month + 1)}.${String(year)} -> ${createdAt}`,
             );
-          } else {
-            dateDebug.push('  No date pattern found in page content');
           }
         }
 
-        if (!createdAt) {
+        if (createdAt === null) {
           dateDebug.push('Method 4: Looking for dates near "Historia"...');
           const historySection = document.querySelector(
             '[class*="history"], [class*="Historia"], [data-cy*="history"]',
           );
-          if (historySection) {
-            const sectionText = historySection.textContent || '';
+          if (historySection === null) {
+            dateDebug.push("  No history section found");
+          } else {
+            const sectionText = historySection.textContent;
             const allDates = sectionText.match(
               /(\d{1,2})\.(\d{1,2})\.(\d{4})/g,
             );
-            if (allDates && allDates.length > 0) {
-              dateDebug.push(`  Found ${allDates.length} dates in history`);
-              const oldestDate = allDates[allDates.length - 1];
-              const match = oldestDate.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-              if (match) {
-                const day = parseInt(match[1]);
-                const month = parseInt(match[2]) - 1;
-                const year = parseInt(match[3]);
-
-                createdAt = new Date(Date.UTC(year, month, day)).toISOString();
-                dateDebug.push(
-                  `  Method 4 success (oldest date): ${oldestDate} -> ${createdAt}`,
-                );
-              }
+            if (allDates === null || allDates.length === 0) {
+              dateDebug.push("  No dates found in history section");
             } else {
-              dateDebug.push('  No dates found in history section');
+              dateDebug.push(
+                `  Found ${String(allDates.length)} dates in history`,
+              );
+              const oldestDate = allDates.at(-1);
+              if (oldestDate !== undefined) {
+                const match = /(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(oldestDate);
+                if (match !== null) {
+                  const day = Number.parseInt(match[1]);
+                  const month = Number.parseInt(match[2]) - 1;
+                  const year = Number.parseInt(match[3]);
+
+                  createdAt = new Date(
+                    Date.UTC(year, month, day),
+                  ).toISOString();
+                  dateDebug.push(
+                    `  Method 4 success (oldest date): ${oldestDate} -> ${createdAt}`,
+                  );
+                }
+              }
             }
-          } else {
-            dateDebug.push('  History section not found');
           }
         }
 
-        if (!createdAt) {
+        if (createdAt === null) {
           dateDebug.push(
-            'Method 5: Looking for dates in Otodom paragraph classes...',
+            "Method 5: Looking for dates in Otodom paragraph classes...",
           );
           const dateParagraphs = document.querySelectorAll(
             'p.css-f4ltfo, .css-f4ltfo, p[class*="f4ltfo"]',
           );
-          dateDebug.push(`  Found ${dateParagraphs.length} date paragraphs`);
+          dateDebug.push(
+            `  Found ${String(dateParagraphs.length)} date paragraphs`,
+          );
 
-          for (let i = 0; i < dateParagraphs.length; i++) {
-            const p = dateParagraphs[i];
-            const text = p.textContent?.trim() || '';
-            const dateMatch = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+          for (const [index, p] of dateParagraphs.entries()) {
+            const text = p.textContent.trim();
+            const dateMatch = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(text);
 
-            if (dateMatch) {
-              const day = parseInt(dateMatch[1]);
-              const month = parseInt(dateMatch[2]) - 1;
-              const year = parseInt(dateMatch[3]);
+            if (dateMatch !== null) {
+              const day = Number.parseInt(dateMatch[1]);
+              const month = Number.parseInt(dateMatch[2]) - 1;
+              const year = Number.parseInt(dateMatch[3]);
               createdAt = new Date(Date.UTC(year, month, day)).toISOString();
               dateDebug.push(
-                `  Method 5 success at index ${i}: ${text} -> ${createdAt}`,
+                `  Method 5 success at index ${String(index)}: ${text} -> ${createdAt}`,
               );
               break;
             }
           }
 
-          if (!createdAt) {
-            dateDebug.push('  No valid dates found in paragraphs');
+          if (createdAt === null) {
+            dateDebug.push("  No valid dates found in paragraphs");
           }
         }
 
-        if (!createdAt) {
+        if (createdAt === null) {
           dateDebug.push(
-            'All methods failed - No creation date found, will use current date',
-          );
-          dateDebug.push(
-            'This may indicate CloudFront blocking or page structure change',
+            "All methods failed - No creation date found, will use current date",
+            "This may indicate CloudFront blocking or page structure change",
           );
         } else {
           dateDebug.push(`Successfully extracted creation date: ${createdAt}`);
         }
 
-        dateDebug.push(`=== FINAL CREATED_AT: ${createdAt} ===`);
+        dateDebug.push(`=== FINAL CREATED_AT: ${createdAt ?? "NULL"} ===`);
 
         const details: Record<string, string> = {};
 
         const detailSections = document.querySelectorAll(
-          '.css-1xw0jqp.e1mm5aqc1, .e1mm5aqc1',
+          ".css-1xw0jqp.e1mm5aqc1, .e1mm5aqc1",
         );
-        detailSections.forEach((section) => {
+        for (const section of detailSections) {
           const keyElement = section.querySelector(
-            '.css-1okys8k.e1mm5aqc2:first-child, .e1mm5aqc2:first-child',
+            ".css-1okys8k.e1mm5aqc2:first-child, .e1mm5aqc2:first-child",
           );
           const valueElement = section.querySelector(
-            '.css-1okys8k.e1mm5aqc2:last-child, .e1mm5aqc2:last-child',
+            ".css-1okys8k.e1mm5aqc2:last-child, .e1mm5aqc2:last-child",
           );
 
-          if (keyElement && valueElement) {
+          if (keyElement !== null && valueElement !== null) {
             const key = keyElement.textContent
-              ?.trim()
+              .trim()
               .toLowerCase()
-              .replace(':', '');
+              .replace(":", "");
 
             const spans = valueElement.querySelectorAll(
-              'span.css-axw7ok.e1mm5aqc4, span.e1mm5aqc4, span',
+              "span.css-axw7ok.e1mm5aqc4, span.e1mm5aqc4, span",
             );
-            let value = valueElement.textContent?.trim();
+            let value = valueElement.textContent.trim();
 
             if (spans.length > 0) {
-              const spanTexts = Array.from(spans)
-                .map((span) => span.textContent?.trim())
-                .filter((text) => text && text.length > 0)
-                .join(', ');
-              if (spanTexts) {
+              const spanTexts = [...spans]
+                .map((span) => span.textContent.trim())
+                .filter((text) => text.length > 0)
+                .join(", ");
+              if (spanTexts !== "") {
                 value = spanTexts;
               }
             }
 
-            if (key && value && key !== value) {
+            if (key !== "" && value !== "" && key !== value) {
               details[key] = value;
 
-              if (key.includes('powierzchnia') || key.includes('m²')) {
-                details['powierzchnia'] = value;
+              if (key.includes("powierzchnia") || key.includes("m²")) {
+                details.powierzchnia = value;
               }
-              if (key.includes('pokoi') || key.includes('rooms')) {
-                details['liczba pokoi'] = value;
-                details['pokoi'] = value;
+              if (key.includes("pokoi") || key.includes("rooms")) {
+                details["liczba pokoi"] = value;
+                details.pokoi = value;
               }
-              if (key.includes('piętro') || key.includes('floor')) {
-                details['piętro'] = value;
+              if (key.includes("piętro") || key.includes("floor")) {
+                details["piętro"] = value;
               }
 
-              if (key.includes('winda') || key.includes('elevator')) {
-                details['winda'] = value;
+              if (key.includes("winda") || key.includes("elevator")) {
+                details.winda = value;
               }
               if (
-                key.includes('rodzaj zabudowy') ||
-                key.includes('building type')
+                key.includes("rodzaj zabudowy") ||
+                key.includes("building type")
               ) {
-                details['typ budynku'] = value;
+                details["typ budynku"] = value;
               }
               if (
-                key.includes('umeblowani') ||
-                key.includes('furnished') ||
-                key.includes('umeblowanie')
+                key.includes("umeblowani") ||
+                key.includes("furnished") ||
+                key.includes("umeblowanie")
               ) {
-                details['umeblowane'] = value;
+                details.umeblowane = value;
               }
-              if (key.includes('czynsz') && !key.includes('kaucja')) {
-                details['czynsz dodatkowy'] = value;
+              if (key.includes("czynsz") && !key.includes("kaucja")) {
+                details["czynsz dodatkowy"] = value;
               }
               if (
-                key.includes('dostępne od') ||
-                key.includes('available from')
+                key.includes("dostępne od") ||
+                key.includes("available from")
               ) {
-                details['kontakt'] = `Dostępne od: ${value}`;
+                details.kontakt = `Dostępne od: ${value}`;
               }
               if (
-                key.includes('typ ogłoszeniodawcy') ||
-                key.includes('advertiser type')
+                key.includes("typ ogłoszeniodawcy") ||
+                key.includes("advertiser type")
               ) {
-                details['typ ogłoszeniodawcy'] = value;
+                details["typ ogłoszeniodawcy"] = value;
               }
               if (
-                key.includes('informacje dodatkowe') ||
-                key.includes('additional information')
+                key.includes("informacje dodatkowe") ||
+                key.includes("additional information")
               ) {
-                details['informacje dodatkowe'] = value;
+                details["informacje dodatkowe"] = value;
               }
               if (
-                key.includes('wyposażenie') &&
-                !key.includes('bezpieczeństwo') &&
-                !key.includes('zabezpieczenia')
+                key.includes("wyposażenie") &&
+                !key.includes("bezpieczeństwo") &&
+                !key.includes("zabezpieczenia")
               ) {
-                details['wyposażenie'] = value;
+                details["wyposażenie"] = value;
               }
-              if (key.includes('media') && !key.includes('social')) {
-                details['media'] = value;
+              if (key.includes("media") && !key.includes("social")) {
+                details.media = value;
               }
             }
           }
-        });
+        }
 
         const allTextElements = document.querySelectorAll(
-          '.css-1okys8k.e1mm5aqc2, .e1mm5aqc2',
+          ".css-1okys8k.e1mm5aqc2, .e1mm5aqc2",
         );
-        for (let i = 0; i < allTextElements.length - 1; i += 2) {
-          const keyEl = allTextElements[i];
-          const valueEl = allTextElements[i + 1];
-          if (keyEl && valueEl) {
-            const keyText =
-              keyEl.textContent?.trim().toLowerCase().replace(':', '') || '';
-            const valueText = valueEl.textContent?.trim() || '';
+        for (let index = 0; index < allTextElements.length - 1; index += 2) {
+          const keyElement = allTextElements[index];
+          const valueElement = allTextElements[index + 1];
+          const keyText = keyElement.textContent
+            .trim()
+            .toLowerCase()
+            .replace(":", "");
+          const valueText = valueElement.textContent.trim();
 
+          if (
+            keyText !== "" &&
+            valueText !== "" &&
+            keyText !== valueText &&
+            !(keyText in details)
+          ) {
+            details[keyText] = valueText;
+
+            if (keyText.includes("powierzchnia") || keyText.includes("m²")) {
+              details.powierzchnia = valueText;
+            }
+            if (keyText.includes("pokoi")) {
+              details["liczba pokoi"] = valueText;
+              details.pokoi = valueText;
+            }
+            if (keyText.includes("piętro")) {
+              details["piętro"] = valueText;
+            }
+
+            if (keyText.includes("winda")) {
+              details.winda = valueText;
+            }
+            if (keyText.includes("rodzaj zabudowy")) {
+              details["typ budynku"] = valueText;
+            }
             if (
-              keyText &&
-              valueText &&
-              keyText !== valueText &&
-              !details[keyText]
+              keyText.includes("umeblowani") ||
+              keyText.includes("umeblowanie")
             ) {
-              details[keyText] = valueText;
-
-              if (keyText.includes('powierzchnia') || keyText.includes('m²')) {
-                details['powierzchnia'] = valueText;
-              }
-              if (keyText.includes('pokoi')) {
-                details['liczba pokoi'] = valueText;
-                details['pokoi'] = valueText;
-              }
-              if (keyText.includes('piętro')) {
-                details['piętro'] = valueText;
-              }
-
-              if (keyText.includes('winda')) {
-                details['winda'] = valueText;
-              }
-              if (keyText.includes('rodzaj zabudowy')) {
-                details['typ budynku'] = valueText;
-              }
-              if (
-                keyText.includes('umeblowani') ||
-                keyText.includes('umeblowanie')
-              ) {
-                details['umeblowane'] = valueText;
-              }
-              if (keyText.includes('czynsz') && !keyText.includes('kaucja')) {
-                details['czynsz dodatkowy'] = valueText;
-              }
-              if (keyText.includes('dostępne od')) {
-                details['kontakt'] = `Dostępne od: ${valueText}`;
-              }
-              if (keyText.includes('typ ogłoszeniodawcy')) {
-                details['typ ogłoszeniodawcy'] = valueText;
-              }
-              if (keyText.includes('informacje dodatkowe')) {
-                details['informacje dodatkowe'] = valueText;
-              }
-              if (
-                keyText.includes('wyposażenie') &&
-                !keyText.includes('bezpieczeństwo') &&
-                !keyText.includes('zabezpieczenia')
-              ) {
-                details['wyposażenie'] = valueText;
-              }
-              if (keyText.includes('media') && !keyText.includes('social')) {
-                details['media'] = valueText;
-              }
+              details.umeblowane = valueText;
+            }
+            if (keyText.includes("czynsz") && !keyText.includes("kaucja")) {
+              details["czynsz dodatkowy"] = valueText;
+            }
+            if (keyText.includes("dostępne od")) {
+              details.kontakt = `Dostępne od: ${valueText}`;
+            }
+            if (keyText.includes("typ ogłoszeniodawcy")) {
+              details["typ ogłoszeniodawcy"] = valueText;
+            }
+            if (keyText.includes("informacje dodatkowe")) {
+              details["informacje dodatkowe"] = valueText;
+            }
+            if (
+              keyText.includes("wyposażenie") &&
+              !keyText.includes("bezpieczeństwo") &&
+              !keyText.includes("zabezpieczenia")
+            ) {
+              details["wyposażenie"] = valueText;
+            }
+            if (keyText.includes("media") && !keyText.includes("social")) {
+              details.media = valueText;
             }
           }
         }
 
-        if (details['wyposażenie']) {
-          const equipmentValue = details['wyposażenie'].toLowerCase();
-          if (equipmentValue.includes('meble')) {
-            details['umeblowane'] = 'tak';
+        if ("wyposażenie" in details) {
+          const equipmentValue = details["wyposażenie"].toLowerCase();
+          if (equipmentValue.includes("meble")) {
+            details.umeblowane = "tak";
           }
         }
 
-        Object.entries(details).forEach(([, value]) => {
-          if (value && value.toLowerCase().includes('meble')) {
-            details['umeblowane'] = 'tak';
+        for (const [, value] of Object.entries(details)) {
+          if (value.toLowerCase().includes("meble")) {
+            details.umeblowane = "tak";
           }
-        });
+        }
 
         let contact: string | null = null;
 
         const sellerNameElement = document.querySelector(
-          '.e4jldvc1.css-vbzhap',
+          ".e4jldvc1.css-vbzhap",
         );
-        let sellerName = sellerNameElement?.textContent?.trim() || null;
+        let sellerName: string | null = null;
+        if (sellerNameElement !== null) {
+          const trimmed = sellerNameElement.textContent.trim();
+          sellerName = trimmed === "" ? null : trimmed;
+        }
 
-        if (sellerName) {
-          const dashIndex = sellerName.indexOf(' - ');
+        if (sellerName !== null) {
+          const dashIndex = sellerName.indexOf(" - ");
           if (dashIndex !== -1) {
-            const afterDash = sellerName.substring(dashIndex + 3).toLowerCase();
+            const afterDash = sellerName
+              .slice(Math.max(0, dashIndex + 3))
+              .toLowerCase();
             const promotionalKeywords = [
-              'włącz',
-              'powiadomienia',
-              'okazji',
-              'przegap',
-              'nie przegap',
-              'subskryb',
-              'subscribe',
-              'follow',
-              'obserwuj',
+              "włącz",
+              "powiadomienia",
+              "okazji",
+              "przegap",
+              "nie przegap",
+              "subskryb",
+              "subscribe",
+              "follow",
+              "obserwuj",
             ];
 
             if (
               promotionalKeywords.some((keyword) => afterDash.includes(keyword))
             ) {
-              sellerName = sellerName.substring(0, dashIndex);
+              sellerName = sellerName.slice(0, Math.max(0, dashIndex));
             }
           }
 
-          sellerName = sellerName.replace(/[\s-]+$/, '').trim();
+          sellerName = sellerName.replace(/[\s-]+$/, "").trim();
         }
 
-        const offerTypeElement = document.querySelector('.css-f4ltfo');
-        const offerType = offerTypeElement?.textContent?.trim() || null;
+        const offerTypeElement = document.querySelector(".css-f4ltfo");
+        let offerType: string | null = null;
+        if (offerTypeElement !== null) {
+          const trimmed = offerTypeElement.textContent.trim();
+          offerType = trimmed === "" ? null : trimmed;
+        }
 
-        if (sellerName || offerType) {
+        if (sellerName !== null || offerType !== null) {
           const contactParts: string[] = [];
-          if (sellerName) contactParts.push(sellerName);
-          if (offerType) contactParts.push(offerType);
-          contact = contactParts.join(' - ');
+          if (sellerName !== null) {
+            contactParts.push(sellerName);
+          }
+          if (offerType !== null) {
+            contactParts.push(offerType);
+          }
+          contact = contactParts.join(" - ");
         }
 
         return {
@@ -1252,7 +1244,7 @@ export class ScraperProcessor {
           createdAt,
           viewsDebug,
           dateDebug,
-          source: 'otodom' as const,
+          source: "otodom" as const,
         } as OtodomScrapedData & {
           viewsDebug: string[];
           dateDebug: string[];
@@ -1265,27 +1257,27 @@ export class ScraperProcessor {
       };
 
       this.logger.log(
-        `OTODOM: Extracted ${extractionData.views} views for ${url}`,
+        `OTODOM: Extracted ${String(extractionData.views)} views for ${url}`,
       );
       this.logger.log(
-        `OTODOM: Extracted createdAt: ${extractionData.createdAt ? `"${extractionData.createdAt}"` : 'NULL (will use current time)'} for ${url}`,
+        `OTODOM: Extracted createdAt: ${extractionData.createdAt === null ? "NULL (will use current time)" : `"${extractionData.createdAt}"`} for ${url}`,
       );
 
-      if (extractionData.viewsDebug && extractionData.viewsDebug.length > 0) {
-        this.logger.debug('OTODOM VIEWS EXTRACTION DEBUG:');
-        extractionData.viewsDebug.forEach((line) => {
+      if (extractionData.viewsDebug.length > 0) {
+        this.logger.debug("OTODOM VIEWS EXTRACTION DEBUG:");
+        for (const line of extractionData.viewsDebug) {
           this.logger.debug(`   ${line}`);
-        });
+        }
       }
 
-      if (extractionData.dateDebug && extractionData.dateDebug.length > 0) {
-        this.logger.debug('OTODOM DATE EXTRACTION DEBUG:');
-        extractionData.dateDebug.forEach((line) => {
+      if (extractionData.dateDebug.length > 0) {
+        this.logger.debug("OTODOM DATE EXTRACTION DEBUG:");
+        for (const line of extractionData.dateDebug) {
           this.logger.debug(`   ${line}`);
-        });
+        }
       }
 
-      if (extractionData.views === 0 && !extractionData.createdAt) {
+      if (extractionData.views === 0 && extractionData.createdAt === null) {
         this.logger.warn(
           `OTODOM: Both views and createdAt extraction failed for ${url}`,
         );
@@ -1297,10 +1289,13 @@ export class ScraperProcessor {
         );
       }
 
-      const priceValue = data.price
-        ? parseFloat(data.price.replace(/[^0-9,]/g, '').replace(',', '.'))
-        : 0;
-      const address = data.address?.split(',') || [];
+      const priceValue =
+        data.price === null
+          ? 0
+          : Number.parseFloat(
+              data.price.replaceAll(/[^0-9,]/g, "").replace(",", "."),
+            );
+      const address = data.address === null ? [] : data.address.split(",");
 
       let extractedStreet: string | null = null;
       let extractedStreetNumber: string | null = null;
@@ -1308,30 +1303,38 @@ export class ScraperProcessor {
       let longitude: number | null = null;
 
       try {
-        const addressText = data.address || '';
-        if (data.title || addressText) {
+        const addressText = data.address ?? "";
+        if (data.title !== null || addressText !== "") {
           this.logger.debug(
-            `Extracting Otodom address from: ${data.title}, Address: ${addressText}`,
+            `Extracting Otodom address from: ${data.title ?? ""}, Address: ${addressText}`,
           );
           const addressResult = await this.scraperService.extractAddress(
-            data.title || '',
-            addressText || data.description || undefined,
+            data.title ?? "",
+            addressText === "" ? (data.description ?? undefined) : addressText,
           );
 
-          if (addressResult.street) {
+          if (addressResult.street !== undefined) {
             const cleanedStreet = StreetNameCleaner.normalizeStreetName(
               addressResult.street,
             );
 
             if (StreetNameCleaner.isValidStreetName(cleanedStreet)) {
               extractedStreet = cleanedStreet;
-              extractedStreetNumber = addressResult.streetNumber || null;
+              const streetNumberRaw = addressResult.streetNumber ?? null;
+              extractedStreetNumber =
+                streetNumberRaw === "" ? null : streetNumberRaw;
               this.logger.log(
-                `Otodom address extracted: ${extractedStreet}${extractedStreetNumber ? ` ${extractedStreetNumber}` : ''} (confidence: ${addressResult.confidence})`,
+                `Otodom address extracted: ${extractedStreet}${extractedStreetNumber === null ? "" : ` ${extractedStreetNumber}`} (confidence: ${String(addressResult.confidence)})`,
               );
 
-              const city = address[address.length - 2]?.trim() || 'Nieznane';
-              const fullAddress = `${extractedStreet}${extractedStreetNumber ? ` ${extractedStreetNumber}` : ''}, ${city}`;
+              const cityRaw = address.at(-2);
+              const city =
+                cityRaw === undefined
+                  ? "Nieznane"
+                  : cityRaw.trim() === ""
+                    ? "Nieznane"
+                    : cityRaw.trim();
+              const fullAddress = `${extractedStreet}${extractedStreetNumber === null ? "" : ` ${extractedStreetNumber}`}, ${city}`;
               const coordinates = await this.geocodeAddress(fullAddress, city);
               latitude = coordinates.latitude;
               longitude = coordinates.longitude;
@@ -1340,122 +1343,122 @@ export class ScraperProcessor {
                 `Rejected invalid Otodom street after final cleaning: ${addressResult.street} -> ${cleanedStreet}`,
               );
             }
-          } else {
-            this.logger.debug(
-              'No address found in Otodom offer text - trying location geocoding',
-            );
-
-            const city = address[address.length - 2]?.trim() || 'Nieznane';
-            const district = address[address.length - 3]?.trim();
-            const geocodingAddress =
-              addressText || (district ? `${district}, ${city}` : city);
-            if (geocodingAddress && geocodingAddress !== 'Nieznane') {
-              const coordinates = await this.geocodeAddress(geocodingAddress);
-              latitude = coordinates.latitude;
-              longitude = coordinates.longitude;
-            }
           }
         }
       } catch (error) {
         this.logger.warn(
-          `Otodom address extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Otodom address extraction failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
 
-      const findParamValue = (targetKey: string) =>
-        this.paramParser.findParamValue(data.details, targetKey);
+      const findParameterValue = (targetKey: string) =>
+        this.parameterParser.findParamValue(data.details, targetKey);
 
-      const furniture = this.paramParser.parseBoolean(
-        findParamValue('umeblowane'),
-        'Furniture (Otodom)',
+      const furniture = this.parameterParser.parseBoolean(
+        findParameterValue("umeblowane"),
+        "Furniture (Otodom)",
       );
 
-      const elevator = this.paramParser.parseBoolean(
-        findParamValue('winda'),
-        'Elevator (Otodom)',
+      const elevator = this.parameterParser.parseBoolean(
+        findParameterValue("winda"),
+        "Elevator (Otodom)",
       );
 
-      const ownerType = this.paramParser.parseOwnerType(data.details);
+      const ownerType = this.parameterParser.parseOwnerType(data.details);
 
-      const city = address[address.length - 2]?.trim() || 'Nieznane';
-      const district = address[address.length - 3]?.trim() || null;
+      const cityRaw = address.at(-2);
+      const city =
+        cityRaw === undefined
+          ? "Nieznane"
+          : cityRaw.trim() === ""
+            ? "Nieznane"
+            : cityRaw.trim();
+      const districtRaw = address.at(-3);
+      const district =
+        districtRaw === undefined
+          ? null
+          : districtRaw.trim() === ""
+            ? null
+            : districtRaw.trim();
 
-      const finalCreatedAt = data.createdAt
-        ? new Date(data.createdAt)
-        : new Date();
+      const finalCreatedAt =
+        data.createdAt === null ? new Date() : new Date(data.createdAt);
 
       const summary = await this.generateSummary(
-        data.title || '',
-        data.description || '',
+        data.title ?? "",
+        data.description ?? "",
       );
 
       const offerDto = this.mapperService.mapOtodomToCreateOfferDto({
-        url: url,
-        title: data.title || '',
+        url,
+        title: data.title ?? "",
         price: priceValue,
-        city: city,
-        district: district,
+        city,
+        district,
         footage:
-          this.paramParser.parseOtodomFootage(data.footage, data.details) || 0,
-        description: data.description || '',
-        summary: summary,
+          this.parameterParser.parseOtodomFootage(data.footage, data.details) ??
+          0,
+        description: data.description ?? "",
+        summary,
         street: extractedStreet,
         streetNumber: extractedStreetNumber,
-        latitude: latitude,
-        longitude: longitude,
+        latitude,
+        longitude,
         rooms:
-          parseInt(data.details['liczba pokoi'] || data.details['pokoi']) ||
+          Number.parseInt(data.details["liczba pokoi"] ?? data.details.pokoi) ||
           null,
-        floor: parseInt(data.details['piętro']) || null,
-        furniture: furniture,
-        elevator: elevator,
-        ownerType: ownerType,
+        floor: Number.parseInt(data.details["piętro"] ?? "") || null,
+        furniture,
+        elevator,
+        ownerType,
         buildingType: BuildingType.APARTMENT,
-        contact: typeof data.contact === 'string' ? data.contact : null,
-        views: data.views || 0,
+        contact: typeof data.contact === "string" ? data.contact : null,
+        views: data.views,
         createdAt: finalCreatedAt,
-        isNew: isNew,
-        images: data.images || [],
-        infoAdditional: data.details['informacje dodatkowe'] || null,
-        furnishing: data.details['wyposażenie'] || null,
-        media: data.details['media'] || null,
+        isNew,
+        images: data.images,
+        infoAdditional: data.details["informacje dodatkowe"] ?? null,
+        furnishing: data.details["wyposażenie"] ?? null,
+        media: data.details.media,
       });
 
       const { offer: createdOffer, created } =
         await this.offerService.findOneOrCreate(offerDto);
 
       this.logger.log(
-        `${created ? 'Created' : 'Updated'} Otodom offer ${createdOffer.id} for ${url} - Views: ${data.views || 0}`,
+        `${created ? "Created" : "Updated"} Otodom offer ${String(createdOffer.id)} for ${url} - Views: ${String(data.views)}`,
       );
 
-      if (!created) {
+      if (created) {
+        this.logger.debug("Created new Otodom offer");
+      } else {
         this.logger.debug(
-          `Updated existing Otodom offer ${createdOffer.id} for URL: ${url}`,
+          `Updated existing Otodom offer ${String(createdOffer.id)} for URL: ${url}`,
         );
       }
 
-      if (createdOffer?.id) {
+      if (created || createdOffer.id) {
         try {
           const matchCount = await this.matchService.processNewOffer(
             createdOffer.id,
           );
           this.logger.log(
-            `Processed ${matchCount} matches for Otodom offer ${createdOffer.id}`,
+            `Processed ${String(matchCount)} matches for Otodom offer ${String(createdOffer.id)}`,
           );
         } catch (error) {
           this.logger.error(
-            `Failed to process matches for Otodom offer ${createdOffer.id}:`,
+            `Failed to process matches for Otodom offer ${String(createdOffer.id)}:`,
             error,
           );
         }
       }
 
       this.logger.log(
-        `Otodom scraping completed for ${url} - Offer ID: ${createdOffer?.id}, Views: ${data.views || 0}, CreatedAt: ${data.createdAt || 'current time'}`,
+        `Otodom scraping completed for ${url} - Offer ID: ${String(createdOffer.id)}, Views: ${String(data.views)}, CreatedAt: ${data.createdAt ?? "current time"}`,
       );
     } catch (error) {
       this.logger.error(
-        `Error processing Otodom offer: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Error processing Otodom offer: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       throw error;
     }

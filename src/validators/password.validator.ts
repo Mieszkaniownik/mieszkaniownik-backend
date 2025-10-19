@@ -1,13 +1,13 @@
-import { ValidatorConstraint, registerDecorator } from 'class-validator';
+import { ValidatorConstraint, registerDecorator } from "class-validator";
 import type {
   ValidationOptions,
   ValidatorConstraintInterface,
-} from 'class-validator';
+} from "class-validator";
 
-@ValidatorConstraint({ name: 'NicePassword', async: false })
+@ValidatorConstraint({ name: "NicePassword", async: false })
 export class NicePasswordConstraint implements ValidatorConstraintInterface {
   validate(password: string): boolean {
-    if (!password || password === '') {
+    if (!password || password === "") {
       return true;
     }
     if (password.length < 8) {
@@ -25,14 +25,14 @@ export class NicePasswordConstraint implements ValidatorConstraintInterface {
     return true;
   }
   defaultMessage(): string {
-    return 'Password must be at least 8 characters long and contain uppercase, digit, and special character (leave empty for OAuth login)';
+    return "Password must be at least 8 characters long and contain uppercase, digit, and special character (leave empty for OAuth login)";
   }
 }
 
 export const NicePassword =
   (options?: ValidationOptions) => (object: object, propertyName: string) => {
     registerDecorator({
-      name: 'NicePassword',
+      name: "NicePassword",
       target: object.constructor,
       propertyName,
       options,

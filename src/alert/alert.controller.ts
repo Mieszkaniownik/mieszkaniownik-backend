@@ -1,165 +1,173 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
-  Request,
-  Query,
+  Get,
+  Param,
   ParseIntPipe,
-} from '@nestjs/common';
+  Patch,
+  Post,
+  Query,
+  Request,
+  UseGuards,
+} from "@nestjs/common";
 import {
-  ApiTags,
+  ApiBearerAuth,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
-import { AlertService } from './alert.service';
-import { CreateAlertDto } from './dto/create-alert.dto';
-import { UpdateAlertDto } from './dto/update-alert.dto';
-import { QueryAlertsDto } from './dto/query-alerts.dto';
-import { AuthGuard } from '../auth/auth.guard';
-import type { UserRequest } from '../auth/dto/user-request';
+  ApiTags,
+} from "@nestjs/swagger";
 
-@ApiTags('alerts')
+import { AuthGuard } from "../auth/auth.guard";
+import type { UserRequest } from "../auth/dto/user-request";
+import { AlertService } from "./alert.service";
+import { CreateAlertDto } from "./dto/create-alert.dto";
+import { QueryAlertsDto } from "./dto/query-alerts.dto";
+import { UpdateAlertDto } from "./dto/update-alert.dto";
+
+@ApiTags("alerts")
 @ApiBearerAuth()
-@Controller('alerts')
+@Controller("alerts")
 @UseGuards(AuthGuard)
 export class AlertController {
   constructor(private readonly alertService: AlertService) {}
 
   @Post()
   @ApiOperation({
-    summary: 'Create a new alert',
+    summary: "Create a new alert",
   })
   @ApiResponse({
     status: 201,
-    description: 'Alert created successfully',
+    description: "Alert created successfully",
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid data or validation failed',
+    description: "Invalid data or validation failed",
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized',
+    description: "Unauthorized",
   })
-  create(@Request() req: UserRequest, @Body() createAlertDto: CreateAlertDto) {
-    return this.alertService.create(Number(req.user.id), createAlertDto);
+  async create(
+    @Request() request: UserRequest,
+    @Body() createAlertDto: CreateAlertDto,
+  ) {
+    return this.alertService.create(request.user.id, createAlertDto);
   }
 
   @Get()
   @ApiOperation({
-    summary: 'Get all alerts for current user',
+    summary: "Get all alerts for current user",
   })
   @ApiResponse({
     status: 200,
-    description: 'Retrieved alerts successfully',
+    description: "Retrieved alerts successfully",
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized',
+    description: "Unauthorized",
   })
-  findAll(@Request() req: UserRequest, @Query() query: QueryAlertsDto) {
-    return this.alertService.findAll(Number(req.user.id), query);
+  async findAll(
+    @Request() request: UserRequest,
+    @Query() query: QueryAlertsDto,
+  ) {
+    return this.alertService.findAll(request.user.id, query);
   }
 
-  @Get(':id')
+  @Get(":id")
   @ApiOperation({
-    summary: 'Get a specific alert by ID',
+    summary: "Get a specific alert by ID",
   })
   @ApiResponse({
     status: 200,
-    description: 'Retrieved alert successfully',
+    description: "Retrieved alert successfully",
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized',
+    description: "Unauthorized",
   })
   @ApiResponse({
     status: 404,
-    description: 'Alert not found',
+    description: "Alert not found",
   })
-  findOne(@Request() req: UserRequest, @Param('id', ParseIntPipe) id: number) {
-    return this.alertService.findOne(id, Number(req.user.id));
+  async findOne(
+    @Request() request: UserRequest,
+    @Param("id", ParseIntPipe) id: number,
+  ) {
+    return this.alertService.findOne(id, request.user.id);
   }
 
-  @Patch(':id')
+  @Patch(":id")
   @ApiOperation({
-    summary: 'Update an alert',
+    summary: "Update an alert",
   })
   @ApiResponse({
     status: 200,
-    description: 'Alert updated successfully',
+    description: "Alert updated successfully",
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid data or validation failed',
+    description: "Invalid data or validation failed",
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized',
+    description: "Unauthorized",
   })
   @ApiResponse({
     status: 404,
-    description: 'Alert not found',
+    description: "Alert not found",
   })
-  update(
-    @Request() req: UserRequest,
-    @Param('id', ParseIntPipe) id: number,
+  async update(
+    @Request() request: UserRequest,
+    @Param("id", ParseIntPipe) id: number,
     @Body() updateAlertDto: UpdateAlertDto,
   ) {
-    return this.alertService.update(
-      id,
-
-      Number(req.user.id),
-      updateAlertDto,
-    );
+    return this.alertService.update(id, request.user.id, updateAlertDto);
   }
 
-  @Delete(':id')
+  @Delete(":id")
   @ApiOperation({
-    summary: 'Delete an alert',
+    summary: "Delete an alert",
   })
   @ApiResponse({
     status: 200,
-    description: 'Alert deleted successfully',
+    description: "Alert deleted successfully",
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized',
+    description: "Unauthorized",
   })
   @ApiResponse({
     status: 404,
-    description: 'Alert not found',
+    description: "Alert not found",
   })
-  remove(@Request() req: UserRequest, @Param('id', ParseIntPipe) id: number) {
-    return this.alertService.remove(id, Number(req.user.id));
-  }
-
-  @Patch(':id/toggle')
-  @ApiOperation({
-    summary: 'Toggle alert status (active/inactive)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Alert status toggled successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Alert not found',
-  })
-  toggleStatus(
-    @Request() req: UserRequest,
-    @Param('id', ParseIntPipe) id: number,
+  async remove(
+    @Request() request: UserRequest,
+    @Param("id", ParseIntPipe) id: number,
   ) {
-    return this.alertService.toggleStatus(id, Number(req.user.id));
+    return this.alertService.remove(id, request.user.id);
+  }
+
+  @Patch(":id/toggle")
+  @ApiOperation({
+    summary: "Toggle alert status (active/inactive)",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Alert status toggled successfully",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Alert not found",
+  })
+  async toggleStatus(
+    @Request() request: UserRequest,
+    @Param("id", ParseIntPipe) id: number,
+  ) {
+    return this.alertService.toggleStatus(id, request.user.id);
   }
 }

@@ -1,5 +1,5 @@
-import { IsOptional, IsNumber, IsString, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
+import { IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class HeatmapQueryDto {
   @IsOptional()
@@ -42,8 +42,8 @@ export class HeatmapQueryDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @Max(20000)
-  limit?: number = 10000;
+  @Max(20_000)
+  limit?: number = 10_000;
 
   @IsOptional()
   @Type(() => Number)

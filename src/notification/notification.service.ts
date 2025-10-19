@@ -1,21 +1,23 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { DatabaseService } from '../database/database.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
+import { NotificationMethod } from "@prisma/client";
+import { Queue } from "bullmq";
+
+import { InjectQueue } from "@nestjs/bullmq";
+import { Injectable, Logger } from "@nestjs/common";
+
+import { DatabaseService } from "../database/database.service";
+import { CreateNotificationDto } from "./dto/create-notification.dto";
 import {
-  EmailJobData,
   DiscordJobData,
+  EmailJobData,
   MatchNotificationData,
-} from './dto/job-data.dto';
-import { NotificationMethod } from '@prisma/client';
+} from "./dto/job-data.dto";
 
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
   constructor(
-    @InjectQueue('notifications') private notificationQueue: Queue,
+    @InjectQueue("notifications") private notificationQueue: Queue,
     private readonly databaseService: DatabaseService,
   ) {}
 
@@ -24,7 +26,7 @@ export class NotificationService {
       data: createNotificationDto,
     });
 
-    this.logger.log(`Notification created: ${notification.id}`);
+    this.logger.log(`Notification created: ${String(notification.id)}`);
     return notification;
   }
 
@@ -33,9 +35,9 @@ export class NotificationService {
       select: { id: true },
     });
 
-    if (!testUser) {
+    if (testUser === null) {
       throw new Error(
-        'No users found in database. Please create a user first.',
+        "No users found in database. Please create a user first.",
       );
     }
 
@@ -61,7 +63,7 @@ export class NotificationService {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
   }
@@ -100,7 +102,7 @@ export class NotificationService {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
   }
@@ -114,7 +116,7 @@ export class NotificationService {
   async notifyMatch(matchId: number): Promise<void> {
     try {
       const job = await this.notificationQueue.add(
-        'match-notification',
+        "match-notification",
         {
           matchId,
           alertId: 0,
@@ -124,18 +126,18 @@ export class NotificationService {
         {
           attempts: 3,
           backoff: {
-            type: 'exponential',
+            type: "exponential",
             delay: 2000,
           },
         },
       );
 
       this.logger.log(
-        `Match notification job queued: ${job.id} for match ${matchId}`,
+        `Match notification job queued: ${job.id ?? "unknown"} for match ${String(matchId)}`,
       );
     } catch (error) {
       this.logger.error(
-        `Failed to queue match notification for match ${matchId}:`,
+        `Failed to queue match notification for match ${String(matchId)}:`,
         error,
       );
       throw error;
@@ -152,15 +154,15 @@ export class NotificationService {
     try {
       const notification = await this.create({
         title: subject,
-        message: 'Email notification',
-        type: 'EMAIL',
+        message: "Email notification",
+        type: "EMAIL",
         method: NotificationMethod.EMAIL,
         userId,
         alertId,
       });
 
       const job = await this.notificationQueue.add(
-        'send-email',
+        "send-email",
         {
           to,
           subject,
@@ -170,14 +172,14 @@ export class NotificationService {
         {
           attempts: 3,
           backoff: {
-            type: 'exponential',
+            type: "exponential",
             delay: 1000,
           },
         },
       );
 
       this.logger.log(
-        `Email job queued: ${job.id} for notification ${notification.id}`,
+        `Email job queued: ${job.id ?? "unknown"} for notification ${String(notification.id)}`,
       );
     } catch (error) {
       this.logger.error(`Failed to queue email notification:`, error);
@@ -188,31 +190,31 @@ export class NotificationService {
   async sendDiscord(
     webhookUrl: string,
     content: string,
-    embeds: Array<{
+    embeds: {
       title: string;
       description: string;
       color?: number;
-      fields?: Array<{
+      fields?: {
         name: string;
         value: string;
         inline?: boolean;
-      }>;
-    }>,
+      }[];
+    }[],
     userId: number,
     alertId: number,
   ): Promise<void> {
     try {
       const notification = await this.create({
-        title: 'Discord Notification',
+        title: "Discord Notification",
         message: content,
-        type: 'DISCORD',
+        type: "DISCORD",
         method: NotificationMethod.DISCORD,
         userId,
         alertId,
       });
 
       const job = await this.notificationQueue.add(
-        'send-discord',
+        "send-discord",
         {
           webhookUrl,
           content,
@@ -222,14 +224,14 @@ export class NotificationService {
         {
           attempts: 3,
           backoff: {
-            type: 'exponential',
+            type: "exponential",
             delay: 1000,
           },
         },
       );
 
       this.logger.log(
-        `Discord job queued: ${job.id} for notification ${notification.id}`,
+        `Discord job queued: ${job.id ?? "unknown"} for notification ${String(notification.id)}`,
       );
     } catch (error) {
       this.logger.error(`Failed to queue Discord notification:`, error);
@@ -263,8 +265,8 @@ export class NotificationService {
       include: { user: true, alert: true },
     });
 
-    if (!notification || notification.sent) {
-      throw new Error('Notification not found or already sent');
+    if (notification === null || notification.sent) {
+      throw new Error("Notification not found or already sent");
     }
 
     await this.databaseService.notification.update({
@@ -277,18 +279,18 @@ export class NotificationService {
 
     if (notification.method === NotificationMethod.EMAIL) {
       this.logger.warn(
-        'Email retry not fully implemented - need to store original email data',
+        "Email retry not fully implemented - need to store original email data",
       );
     } else if (notification.method === NotificationMethod.DISCORD) {
       this.logger.warn(
-        'Discord retry not fully implemented - need to store original Discord data',
+        "Discord retry not fully implemented - need to store original Discord data",
       );
     }
 
-    this.logger.log(`Notification retry initiated: ${notificationId}`);
+    this.logger.log(`Notification retry initiated: ${String(notificationId)}`);
   }
 
-  async cleanup(olderThanDays: number = 30): Promise<number> {
+  async cleanup(olderThanDays = 30): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
@@ -301,7 +303,7 @@ export class NotificationService {
       },
     });
 
-    this.logger.log(`Cleaned up ${result.count} old notifications`);
+    this.logger.log(`Cleaned up ${String(result.count)} old notifications`);
     return result.count;
   }
 }

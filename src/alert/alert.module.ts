@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
-import { AlertController } from './alert.controller';
-import { AlertService } from './alert.service';
-import { DatabaseModule } from '../database/database.module';
+import { Module } from "@nestjs/common";
+
+import { DatabaseModule } from "../database/database.module";
+import { AlertController } from "./alert.controller";
+import { AlertService } from "./alert.service";
 
 @Module({
   imports: [DatabaseModule],

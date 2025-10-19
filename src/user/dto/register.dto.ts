@@ -1,16 +1,17 @@
+import { Role } from "@prisma/client";
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   Validate,
-  IsOptional,
-} from 'class-validator';
+} from "class-validator";
 
-import { NicePassword } from '../../validators/password.validator';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { NicePassword } from "../../validators/password.validator";
 
 export class RegisterDto {
   @ApiProperty()
@@ -29,6 +30,7 @@ export class RegisterDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsEnum(Role)
   role?: Role;
 
   @IsOptional()

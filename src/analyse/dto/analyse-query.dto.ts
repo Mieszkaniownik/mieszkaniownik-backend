@@ -1,8 +1,8 @@
-import { IsOptional, IsNumber, IsString, IsEnum, Min } from 'class-validator';
-import { Type } from 'class-transformer';
-import { BuildingType } from '@prisma/client';
+import { BuildingType } from "@prisma/client";
+import { Type } from "class-transformer";
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
-export class AnalyzerQueryDto {
+export class AnalyseQueryDto {
   @IsOptional()
   @IsString()
   city?: string;

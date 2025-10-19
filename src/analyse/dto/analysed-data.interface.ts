@@ -1,4 +1,4 @@
-export interface AnalyzedOffer {
+export interface AnalysedOffer {
   id: number;
   title: string;
   price?: number;
@@ -53,11 +53,11 @@ export interface AnalysisStats {
   };
 }
 
-export interface AnalyzedData {
-  offers: AnalyzedOffer[];
+export interface AnalysedData {
+  offers: AnalysedOffer[];
   stats: AnalysisStats;
   query: {
-    filters: Record<string, any>;
+    filters: Record<string, unknown>;
     limit: number;
     isUserSpecific: boolean;
     userId?: number;

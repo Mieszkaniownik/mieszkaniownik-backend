@@ -1,11 +1,12 @@
-import { Module } from '@nestjs/common';
-import { HeatmapController } from './heatmap.controller';
-import { HeatmapService } from './heatmap.service';
-import { GeocodingService } from './geocoding.service';
-import { AnalyzerModule } from '../analyzer/analyzer.module';
+import { Module } from "@nestjs/common";
+
+import { AnalyseModule } from "../analyse/analyse.module";
+import { GeocodingService } from "./geocoding.service";
+import { HeatmapController } from "./heatmap.controller";
+import { HeatmapService } from "./heatmap.service";
 
 @Module({
-  imports: [AnalyzerModule],
+  imports: [AnalyseModule],
   controllers: [HeatmapController],
   providers: [HeatmapService, GeocodingService],
   exports: [HeatmapService, GeocodingService],

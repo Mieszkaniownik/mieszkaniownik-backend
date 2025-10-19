@@ -1,41 +1,43 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
-import { AnalyzerQueryDto } from './dto/analyzer-query.dto';
+import type { Offer } from "@prisma/client";
+
+import { Injectable, Logger } from "@nestjs/common";
+
+import { DatabaseService } from "../database/database.service";
+import { AnalyseQueryDto } from "./dto/analyse-query.dto";
 import {
-  AnalyzedData,
-  AnalyzedOffer,
+  AnalysedData,
+  AnalysedOffer,
   AnalysisStats,
   DataAvailabilityStats,
-} from './dto/analyzed-data.interface';
-import type { Offer } from '@prisma/client';
+} from "./dto/analysed-data.interface";
 
 @Injectable()
-export class AnalyzerService {
-  private readonly logger = new Logger(AnalyzerService.name);
+export class AnalyseService {
+  private readonly logger = new Logger(AnalyseService.name);
 
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async analyzeOffers(
-    query: AnalyzerQueryDto = {},
+  async analyseOffers(
+    query: AnalyseQueryDto = {},
     userId?: number,
-  ): Promise<AnalyzedData> {
-    this.logger.log('Starting offer analysis with query:', query);
+  ): Promise<AnalysedData> {
+    this.logger.log("Starting offer analysis with query:", query);
 
-    const limit = Number(query.limit) || 5000;
-    const isUserSpecific = !!userId;
+    const limit = query.limit ?? 5000;
+    const isUserSpecific = Boolean(userId);
 
-    if (isUserSpecific) {
-      this.logger.log(`Analyzing offers for user ${userId} matches`);
-      return this.analyzeUserMatches(query, userId as number, limit);
+    if (isUserSpecific && userId !== undefined) {
+      this.logger.log(`Analyzing offers for user ${String(userId)} matches`);
+      return this.analyseUserMatches(query, userId, limit);
     }
 
-    return this.analyzeGeneralOffers(query, limit);
+    return this.analyseGeneralOffers(query, limit);
   }
 
   async getDataAvailabilityStats(
     userId?: number,
   ): Promise<DataAvailabilityStats> {
-    if (userId) {
+    if (userId !== undefined) {
       return this.getUserMatchesAvailability(userId);
     }
 
@@ -50,7 +52,7 @@ export class AnalyzerService {
     const offersWithAddresses = await this.databaseService.offer.count({
       where: {
         available: true,
-        OR: [{ street: { not: '' } }, { district: { not: '' } }],
+        OR: [{ street: { not: "" } }, { district: { not: "" } }],
       },
     });
 
@@ -91,17 +93,17 @@ export class AnalyzerService {
       offersWithFootage,
       offersWithPrice,
       viewsStats: {
-        average: viewsStats._avg.views || 0,
-        maximum: viewsStats._max.views || 0,
-        minimum: viewsStats._min.views || 0,
+        average: viewsStats._avg.views ?? 0,
+        maximum: viewsStats._max.views ?? 0,
+        minimum: viewsStats._min.views ?? 0,
       },
     };
   }
 
-  private async analyzeGeneralOffers(
-    query: AnalyzerQueryDto,
+  private async analyseGeneralOffers(
+    query: AnalyseQueryDto,
     limit: number,
-  ): Promise<AnalyzedData> {
+  ): Promise<AnalysedData> {
     const whereClause = this.buildOfferWhereClause(query);
 
     const offers = await this.databaseService.offer.findMany({
@@ -113,15 +115,15 @@ export class AnalyzerService {
         longitude: { not: null },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       take: limit,
     });
 
-    this.logger.log(`Found ${offers.length} offers matching criteria`);
+    this.logger.log(`Found ${String(offers.length)} offers matching criteria`);
 
     if (offers.length === 0) {
-      return this.createEmptyAnalyzedData(query, false);
+      return this.createEmptyAnalysedData(query, false);
     }
 
     const analyzedOffers = this.processOffers(offers);
@@ -131,24 +133,24 @@ export class AnalyzerService {
       offers: analyzedOffers,
       stats,
       query: {
-        filters: query,
+        filters: query as Record<string, unknown>,
         limit,
         isUserSpecific: false,
       },
     };
   }
 
-  private async analyzeUserMatches(
-    query: AnalyzerQueryDto,
+  private async analyseUserMatches(
+    query: AnalyseQueryDto,
     userId: number,
     limit: number,
-  ): Promise<AnalyzedData> {
+  ): Promise<AnalysedData> {
     const offerWhereClause = this.buildOfferWhereClause(query);
 
     const alertWhereClause: { userId: number; id?: number } = { userId };
-    if (query.alertId) {
+    if (query.alertId !== undefined) {
       alertWhereClause.id = query.alertId;
-      this.logger.log(`Filtering matches for alert ${query.alertId}`);
+      this.logger.log(`Filtering matches for alert ${String(query.alertId)}`);
     }
 
     const matches = await this.databaseService.match.findMany({
@@ -165,21 +167,23 @@ export class AnalyzerService {
         offer: true,
       },
       orderBy: {
-        matchedAt: 'desc',
+        matchedAt: "desc",
       },
       take: limit,
     });
 
-    this.logger.log(`Found ${matches.length} matches for user ${userId}`);
+    this.logger.log(
+      `Found ${String(matches.length)} matches for user ${String(userId)}`,
+    );
 
     if (matches.length === 0) {
-      return this.createEmptyAnalyzedData(query, true, userId, query.alertId);
+      return this.createEmptyAnalysedData(query, true, userId, query.alertId);
     }
 
     const offerIdToMatchId = new Map<number, number>();
-    matches.forEach((match) => {
+    for (const match of matches) {
       offerIdToMatchId.set(match.offer.id, match.id);
-    });
+    }
 
     const offers = matches
       .map((match) => match.offer)
@@ -197,7 +201,7 @@ export class AnalyzerService {
       offers: analyzedOffers,
       stats,
       query: {
-        filters: query,
+        filters: query as Record<string, unknown>,
         limit,
         isUserSpecific: true,
         userId,
@@ -209,7 +213,7 @@ export class AnalyzerService {
   private processOffers(
     offers: Offer[],
     matchIdMap?: Map<number, number>,
-  ): AnalyzedOffer[] {
+  ): AnalysedOffer[] {
     const viewsPerDayList = offers.map((offer) =>
       this.calculateViewsPerDay(offer.views, offer.createdAt),
     );
@@ -235,52 +239,52 @@ export class AnalyzerService {
             : 1;
 
         const pricePerSqm =
-          offer.price && offer.footage && Number(offer.footage) > 0
+          offer.footage !== null && Number(offer.footage) > 0
             ? Number(offer.price) / Number(offer.footage)
             : undefined;
 
-        const analyzed: AnalyzedOffer = {
+        const analyzed: AnalysedOffer = {
           id: offer.id,
           title: offer.title,
-          price: offer.price ? Number(offer.price) : undefined,
+          price: Number(offer.price),
           views: offer.views,
           latitude: Number(offer.latitude),
           longitude: Number(offer.longitude),
           createdAt: offer.createdAt,
-          footage: offer.footage ? Number(offer.footage) : undefined,
-          rooms: offer.rooms || undefined,
-          street: offer.street || undefined,
-          streetNumber: offer.streetNumber || undefined,
-          district: offer.district || undefined,
-          city: offer.city || undefined,
-          images: offer.images || [],
+          footage: offer.footage === null ? undefined : Number(offer.footage),
+          rooms: offer.rooms ?? undefined,
+          street: offer.street ?? undefined,
+          streetNumber: offer.streetNumber ?? undefined,
+          district: offer.district ?? undefined,
+          city: offer.city,
+          images: offer.images,
           link: offer.link,
           viewsPerDay,
           pricePerSqm,
-          offerDensity: densityMap.get(index) || 1,
+          offerDensity: densityMap.get(index) ?? 1,
           normalizedIntensity: Math.max(0.1, normalizedIntensity),
           matchId: matchIdMap?.get(offer.id),
         };
 
         return analyzed;
       })
-      .filter((offer): offer is AnalyzedOffer => offer !== null);
+      .filter((offer): offer is AnalysedOffer => offer !== null);
   }
 
-  private calculateStats(offers: AnalyzedOffer[]): AnalysisStats {
+  private calculateStats(offers: AnalysedOffer[]): AnalysisStats {
     if (offers.length === 0) {
       return this.createEmptyStats();
     }
 
     const viewsCounts = offers.map((o) => o.views);
     const avgViews =
-      viewsCounts.reduce((sum, val) => sum + val, 0) / viewsCounts.length;
+      viewsCounts.reduce((sum, value) => sum + value, 0) / viewsCounts.length;
     const minViews = Math.min(...viewsCounts);
     const maxViews = Math.max(...viewsCounts);
 
     const viewsPerDayList = offers.map((o) => o.viewsPerDay);
     const avgViewsPerDay =
-      viewsPerDayList.reduce((sum, val) => sum + val, 0) /
+      viewsPerDayList.reduce((sum, value) => sum + value, 0) /
       viewsPerDayList.length;
     const minViewsPerDay = Math.min(...viewsPerDayList);
     const maxViewsPerDay = Math.max(...viewsPerDayList);
@@ -290,7 +294,8 @@ export class AnalyzerService {
       .filter((p): p is number => p !== undefined);
     const avgPricePerSqm =
       pricesPerSqm.length > 0
-        ? pricesPerSqm.reduce((sum, val) => sum + val, 0) / pricesPerSqm.length
+        ? pricesPerSqm.reduce((sum, value) => sum + value, 0) /
+          pricesPerSqm.length
         : undefined;
     const minPricePerSqm =
       pricesPerSqm.length > 0 ? Math.min(...pricesPerSqm) : undefined;
@@ -299,7 +304,8 @@ export class AnalyzerService {
 
     const densityCounts = offers.map((o) => o.offerDensity);
     const avgDensity =
-      densityCounts.reduce((sum, val) => sum + val, 0) / densityCounts.length;
+      densityCounts.reduce((sum, value) => sum + value, 0) /
+      densityCounts.length;
     const minDensity = Math.min(...densityCounts);
     const maxDensity = Math.max(...densityCounts);
 
@@ -308,7 +314,7 @@ export class AnalyzerService {
       .filter((f): f is number => f !== undefined);
     const avgFootage =
       footages.length > 0
-        ? footages.reduce((sum, val) => sum + val, 0) / footages.length
+        ? footages.reduce((sum, value) => sum + value, 0) / footages.length
         : undefined;
     const minFootage = footages.length > 0 ? Math.min(...footages) : undefined;
     const maxFootage = footages.length > 0 ? Math.max(...footages) : undefined;
@@ -350,93 +356,126 @@ export class AnalyzerService {
   }
 
   private calculateDensity(offers: Offer[]): Map<number, number> {
-    const densityRadius = 0.01; // ~1km in degrees
+    const densityRadius = 0.01;
     const densityMap = new Map<number, number>();
 
-    offers.forEach((offer, index) => {
+    for (const [index, offer] of offers.entries()) {
       if (offer.latitude === null || offer.longitude === null) {
         densityMap.set(index, 0);
-        return;
+        continue;
       }
 
       const lat = Number(offer.latitude);
       const lng = Number(offer.longitude);
       let nearbyCount = 0;
 
-      offers.forEach((otherOffer) => {
+      for (const otherOffer of offers) {
         if (otherOffer.latitude === null || otherOffer.longitude === null) {
-          return;
+          continue;
         }
 
         const otherLat = Number(otherOffer.latitude);
         const otherLng = Number(otherOffer.longitude);
 
-        const distance = Math.sqrt(
-          Math.pow(lat - otherLat, 2) + Math.pow(lng - otherLng, 2),
-        );
+        const distance = Math.hypot(lat - otherLat, lng - otherLng);
 
         if (distance <= densityRadius) {
           nearbyCount++;
         }
-      });
+      }
 
       densityMap.set(index, nearbyCount);
-    });
+    }
 
     return densityMap;
   }
 
-  private buildOfferWhereClause(query: AnalyzerQueryDto): Record<string, any> {
-    const where: Record<string, any> = {};
+  private buildOfferWhereClause(
+    query: AnalyseQueryDto,
+  ): Record<string, unknown> {
+    const where: Record<string, unknown> = {};
 
-    if (query.city) {
+    if (query.city !== undefined && query.city !== "") {
       where.city = {
         contains: query.city,
-        mode: 'insensitive',
+        mode: "insensitive",
       };
     }
 
-    if (query.district) {
+    if (query.district !== undefined && query.district !== "") {
       where.district = {
         contains: query.district,
-        mode: 'insensitive',
+        mode: "insensitive",
       };
     }
 
-    if (query.minPrice || query.maxPrice) {
-      const priceFilter: Record<string, any> = {};
-      if (query.minPrice) priceFilter.gte = query.minPrice;
-      if (query.maxPrice) priceFilter.lte = query.maxPrice;
+    if (
+      (query.minPrice !== undefined && query.minPrice !== 0) ||
+      (query.maxPrice !== undefined && query.maxPrice !== 0)
+    ) {
+      const priceFilter: Record<string, unknown> = {};
+      if (query.minPrice !== undefined && query.minPrice !== 0) {
+        priceFilter.gte = query.minPrice;
+      }
+      if (query.maxPrice !== undefined && query.maxPrice !== 0) {
+        priceFilter.lte = query.maxPrice;
+      }
       where.price = priceFilter;
     }
 
-    if (query.minViews || query.maxViews) {
-      const viewsFilter: Record<string, any> = {};
-      if (query.minViews) viewsFilter.gte = query.minViews;
-      if (query.maxViews) viewsFilter.lte = query.maxViews;
+    if (
+      (query.minViews !== undefined && query.minViews !== 0) ||
+      (query.maxViews !== undefined && query.maxViews !== 0)
+    ) {
+      const viewsFilter: Record<string, unknown> = {};
+      if (query.minViews !== undefined && query.minViews !== 0) {
+        viewsFilter.gte = query.minViews;
+      }
+      if (query.maxViews !== undefined && query.maxViews !== 0) {
+        viewsFilter.lte = query.maxViews;
+      }
       where.views = viewsFilter;
     }
 
-    if (query.buildingType) {
+    if (query.buildingType !== undefined) {
       where.buildingType = query.buildingType;
     }
 
-    if (query.minFootage || query.maxFootage) {
-      const footageFilter: Record<string, any> = {};
-      if (query.minFootage) footageFilter.gte = query.minFootage;
-      if (query.maxFootage) footageFilter.lte = query.maxFootage;
+    if (
+      (query.minFootage !== undefined && query.minFootage !== 0) ||
+      (query.maxFootage !== undefined && query.maxFootage !== 0)
+    ) {
+      const footageFilter: Record<string, unknown> = {};
+      if (query.minFootage !== undefined && query.minFootage !== 0) {
+        footageFilter.gte = query.minFootage;
+      }
+      if (query.maxFootage !== undefined && query.maxFootage !== 0) {
+        footageFilter.lte = query.maxFootage;
+      }
       where.footage = footageFilter;
     }
 
-    if (query.minRooms || query.maxRooms) {
-      const roomsFilter: Record<string, any> = {};
-      if (query.minRooms) roomsFilter.gte = query.minRooms;
-      if (query.maxRooms) roomsFilter.lte = query.maxRooms;
+    if (
+      (query.minRooms !== undefined && query.minRooms !== 0) ||
+      (query.maxRooms !== undefined && query.maxRooms !== 0)
+    ) {
+      const roomsFilter: Record<string, unknown> = {};
+      if (query.minRooms !== undefined && query.minRooms !== 0) {
+        roomsFilter.gte = query.minRooms;
+      }
+      if (query.maxRooms !== undefined && query.maxRooms !== 0) {
+        roomsFilter.lte = query.maxRooms;
+      }
       where.rooms = roomsFilter;
     }
 
-    if (query.minPricePerSqm || query.maxPricePerSqm) {
-      const andConditions = (where.AND as any[]) || [];
+    if (
+      (query.minPricePerSqm !== undefined && query.minPricePerSqm !== 0) ||
+      (query.maxPricePerSqm !== undefined && query.maxPricePerSqm !== 0)
+    ) {
+      const andConditions = Array.isArray(where.AND)
+        ? (where.AND as unknown[])
+        : [];
       andConditions.push({
         price: { gt: 0 },
         footage: { gt: 0 },
@@ -447,17 +486,17 @@ export class AnalyzerService {
     return where;
   }
 
-  private createEmptyAnalyzedData(
-    query: AnalyzerQueryDto,
+  private createEmptyAnalysedData(
+    query: AnalyseQueryDto,
     isUserSpecific: boolean,
     userId?: number,
     alertId?: number,
-  ): AnalyzedData {
+  ): AnalysedData {
     return {
       offers: [],
       stats: this.createEmptyStats(),
       query: {
-        filters: query,
+        filters: query as Record<string, unknown>,
         limit: Number(query.limit) || 5000,
         isUserSpecific,
         userId,
@@ -481,7 +520,9 @@ export class AnalyzerService {
   private async getUserMatchesAvailability(
     userId: number,
   ): Promise<DataAvailabilityStats> {
-    this.logger.log(`Getting data availability for user ${userId} matches`);
+    this.logger.log(
+      `Getting data availability for user ${String(userId)} matches`,
+    );
 
     const totalOffers = await this.databaseService.match.count({
       where: { alert: { userId } },
@@ -499,7 +540,7 @@ export class AnalyzerService {
         alert: { userId },
         offer: {
           available: true,
-          OR: [{ street: { not: '' } }, { district: { not: '' } }],
+          OR: [{ street: { not: "" } }, { district: { not: "" } }],
         },
       },
     });
@@ -566,7 +607,7 @@ export class AnalyzerService {
       userContext: {
         userId,
         isUserSpecific: true,
-        description: 'Statistics based on user matches',
+        description: "Statistics based on user matches",
       },
     };
   }

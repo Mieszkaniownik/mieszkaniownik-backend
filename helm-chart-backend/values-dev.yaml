@@ -1,0 +1,88 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets:
+    - name: registry-secret
+
+backend:
+  replicaCount: 1
+
+  image:
+    tag: "dev-latest"
+    pullPolicy: Always
+
+  env:
+    NODE_ENV: development
+    LOG_LEVEL: "debug"
+    ENABLE_SWAGGER: "true"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+postgresql:
+  enabled: true
+  primary:
+    persistence:
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+redis:
+  enabled: true
+  master:
+    persistence:
+      size: 1Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+databaseJobs:
+  migrate:
+    enabled: true
+  seed:
+    enabled: true
+
+secrets:
+  postgresql:
+    POSTGRES_PASSWORD: "dev-password-123"
+  app:
+    JWT_SECRET: "dev-jwt-secret-key-change-in-prod"
+    GOOGLE_CLIENT_ID: "your-dev-google-client-id"
+    GOOGLE_CLIENT_SECRET: "your-dev-google-client-secret"
+
+config:
+  database:
+    maxConnections: 5
+    ssl: false
+  scraper:
+    interval: "0 */2 * * *"
+    maxPages: 10
+
+ingress:
+  enabled: true
+  hosts:
+    - host: api-dev.mieszkaniownik.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend
+  tls:
+    - secretName: mieszkaniownik-backend-dev-tls
+      hosts:
+        - api-dev.mieszkaniownik.com
+
+autoscaling:
+  enabled: false

@@ -1,16 +1,17 @@
-import { compare } from 'bcrypt';
+import { compare } from "bcrypt";
+
 import {
   ConflictException,
   Injectable,
   UnauthorizedException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 
-import { RegisterDto } from '../user/dto/register.dto';
-import { UserResponseDto } from '../user/dto/user-response.dto';
-import { UserService } from '../user/user.service';
-import { ResponseDto } from './dto/response.dto';
-import { GoogleUser } from './dto/google-user.interface';
+import { RegisterDto } from "../user/dto/register.dto";
+import { UserResponseDto } from "../user/dto/user-response.dto";
+import { UserService } from "../user/user.service";
+import { GoogleUser } from "./dto/google-user.interface";
+import { ResponseDto } from "./dto/response.dto";
 
 @Injectable()
 export class AuthService {
@@ -21,8 +22,8 @@ export class AuthService {
 
   private async generateToken(email: string): Promise<string> {
     const user = await this.userService.findOne(email);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    if (user === null) {
+      throw new UnauthorizedException("User not found");
     }
     const payload = { email, sub: email, role: user.role };
     return this.jwtService.sign(payload);
@@ -33,12 +34,12 @@ export class AuthService {
     sub: string;
   }): Promise<UserResponseDto> {
     try {
-      const UserResponseDto = await this.userService.findOneMetadata(
+      const userResponseDto = await this.userService.findOneMetadata(
         payload.email,
       );
-      return UserResponseDto;
+      return userResponseDto;
     } catch {
-      throw new UnauthorizedException('Invalid token: user not found');
+      throw new UnauthorizedException("Invalid token: user not found");
     }
   }
 
@@ -52,11 +53,10 @@ export class AuthService {
     }
     let passwordMatches: boolean;
     try {
-      if (!user.password) {
-        passwordMatches = false;
-      } else {
-        passwordMatches = await compare(password, user.password);
-      }
+      passwordMatches =
+        user.password !== null && user.password !== ""
+          ? await compare(password, user.password)
+          : false;
     } catch {
       passwordMatches = false;
     }
@@ -75,11 +75,11 @@ export class AuthService {
   ): Promise<ResponseDto> {
     try {
       const existingUser = await this.userService.findOne(email);
-      if (existingUser) {
+      if (existingUser !== null) {
         if (!existingUser.active) {
-          throw new ConflictException('User with this email is disabled');
+          throw new ConflictException("User with this email is disabled");
         }
-        throw new ConflictException('User with this email exists');
+        throw new ConflictException("User with this email exists");
       }
     } catch (error) {
       if (
@@ -108,28 +108,13 @@ export class AuthService {
         .findOne(googleUser.email)
         .catch(() => null);
 
-      if (user) {
-        if (!user.googleId) {
-          await this.userService.updateGoogleId(
-            user.email,
-            googleUser.googleId,
-          );
-        }
-
-        if (!user.active) {
-          throw new UnauthorizedException('User account is disabled');
-        }
-
-        const payload = { email: user.email, sub: user.email, role: user.role };
-        const token = this.jwtService.sign(payload);
-        return { token };
-      } else {
+      if (user === null) {
         const registerDto: RegisterDto = {
           email: googleUser.email,
           name: googleUser.name,
           surname: googleUser.surname,
           googleId: googleUser.googleId,
-          password: '',
+          password: "",
         };
 
         const newUser = await this.userService.createGoogleUser(registerDto);
@@ -142,6 +127,18 @@ export class AuthService {
         const token = this.jwtService.sign(payload);
         return { token };
       }
+
+      if (user.googleId === null || user.googleId === "") {
+        await this.userService.updateGoogleId(user.email, googleUser.googleId);
+      }
+
+      if (!user.active) {
+        throw new UnauthorizedException("User account is disabled");
+      }
+
+      const payload = { email: user.email, sub: user.email, role: user.role };
+      const token = this.jwtService.sign(payload);
+      return { token };
     } catch (error) {
       if (
         error instanceof ConflictException ||
@@ -149,8 +146,8 @@ export class AuthService {
       ) {
         throw error;
       }
-      console.error('Google authentication error:', error);
-      throw new UnauthorizedException('Google authentication failed');
+      console.error("Google authentication error:", error);
+      throw new UnauthorizedException("Google authentication failed");
     }
   }
 }

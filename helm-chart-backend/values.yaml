@@ -1,0 +1,241 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+app:
+  name: mieszkaniownik-backend
+  version: 1.0.0
+
+backend:
+  enabled: true
+  name: backend
+  replicaCount: 2
+
+  image:
+    repository: mieszkaniownik-backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 5001
+    targetPort: 5001
+    name: http
+
+  env:
+    NODE_ENV: production
+    PORT: "5001"
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  healthChecks:
+    enabled: true
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: http
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  revisionHistoryLimit: 5
+
+postgresql:
+  enabled: true
+  auth:
+    existingSecret: "postgresql-credentials"
+    secretKeys:
+      adminPasswordKey: "postgres-password"
+      userPasswordKey: "password"
+    username: "mieszkaniownik"
+    database: "mieszkaniownik"
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: "standard"
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    service:
+      ports:
+        postgresql: 5432
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: "standard"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    service:
+      ports:
+        redis: 6379
+
+databaseJobs:
+  migrate:
+    enabled: true
+    image:
+      repository: mieszkaniownik-backend
+      tag: "latest"
+      pullPolicy: IfNotPresent
+    command: ["npm", "run", "prisma:migrate:deploy"]
+    backoffLimit: 5
+    restartPolicy: Never
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  seed:
+    enabled: false
+    image:
+      repository: mieszkaniownik-backend
+      tag: "latest"
+      pullPolicy: IfNotPresent
+    command: ["npm", "run", "prisma:seed"]
+    backoffLimit: 3
+    restartPolicy: Never
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+secrets:
+  postgresql:
+    create: true
+    name: "postgresql-credentials"
+    POSTGRES_PASSWORD: ""
+    POSTGRES_USER: "mieszkaniownik"
+    POSTGRES_DB: "mieszkaniownik"
+
+  app:
+    create: true
+    name: "app-secrets"
+    JWT_SECRET: ""
+    GOOGLE_CLIENT_ID: ""
+    GOOGLE_CLIENT_SECRET: ""
+    DISCORD_WEBHOOK_URL: ""
+    EMAIL_USER: ""
+    EMAIL_PASS: ""
+
+config:
+  database:
+    maxConnections: 10
+    ssl: false
+  redis:
+    ttl: 3600
+  scraper:
+    interval: "0 */6 * * *"
+    maxPages: 50
+  notifications:
+    discord:
+      enabled: true
+    email:
+      enabled: true
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+  hosts:
+    - host: api.mieszkaniownik.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend
+  tls: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1001
+  capabilities:
+    drop:
+      - ALL
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+networkPolicy:
+  enabled: false
+  ingress:
+    - from: []
+      ports:
+        - port: 5001
+          protocol: TCP
+  egress:
+    - to: []
+      ports:
+        - port: 5432
+          protocol: TCP
+        - port: 6379
+          protocol: TCP

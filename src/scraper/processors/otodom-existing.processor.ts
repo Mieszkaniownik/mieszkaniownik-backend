@@ -1,12 +1,14 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { OtodomScraperService } from '../services/otodom-scraper.service';
-import { BrowserSetupService } from '../services/browser-setup.service';
+import { Job } from "bullmq";
 
-@Processor('otodom-existing', {
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+
+import { BrowserSetupService } from "../services/browser-setup.service";
+import { OtodomScraperService } from "../services/otodom-scraper.service";
+
+@Processor("otodom-existing", {
   concurrency: 2,
-  lockDuration: 120000,
+  lockDuration: 120_000,
 })
 export class OtodomExistingProcessor extends WorkerHost {
   private readonly logger = new Logger(OtodomExistingProcessor.name);

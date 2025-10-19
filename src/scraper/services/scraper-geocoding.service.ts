@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { GeocodingService } from '../../heatmap/geocoding.service';
+import { Injectable, Logger } from "@nestjs/common";
+
+import { GeocodingService } from "../../heatmap/geocoding.service";
 
 @Injectable()
 export class ScraperGeocodingService {
@@ -13,7 +14,9 @@ export class ScraperGeocodingService {
   ): Promise<{ latitude: number | null; longitude: number | null }> {
     try {
       const fullAddress =
-        city && !address.includes(city) ? `${address}, ${city}` : address;
+        city !== undefined && city !== "" && !address.includes(city)
+          ? `${address}, ${city}`
+          : address;
 
       this.logger.debug(`Geocoding address: ${fullAddress}`);
 
@@ -22,41 +25,41 @@ export class ScraperGeocodingService {
         city,
       );
 
-      if (result) {
-        this.logger.log(
-          `Successfully geocoded "${fullAddress}" -> lat: ${result.lat}, lng: ${result.lng}`,
-        );
-        return {
-          latitude: result.lat,
-          longitude: result.lng,
-        };
-      } else {
+      if (result === null) {
         this.logger.warn(`Failed to geocode address: ${fullAddress}`);
         return { latitude: null, longitude: null };
       }
+
+      this.logger.log(
+        `Successfully geocoded "${fullAddress}" -> lat: ${String(result.lat)}, lng: ${String(result.lng)}`,
+      );
+      return {
+        latitude: result.lat,
+        longitude: result.lng,
+      };
     } catch (error) {
       this.logger.warn(
-        `Geocoding error for "${address}": ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Geocoding error for "${address}": ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       return { latitude: null, longitude: null };
     }
   }
 
   async batchGeocodeAddresses(
-    addresses: Array<{
+    addresses: {
       address: string;
       city?: string;
       identifier: string | number;
-    }>,
+    }[],
   ): Promise<
-    Array<{
+    {
       identifier: string | number;
       latitude: number | null;
       longitude: number | null;
-    }>
+    }[]
   > {
     this.logger.log(
-      `Starting batch geocoding of ${addresses.length} addresses`,
+      `Starting batch geocoding of ${String(addresses.length)} addresses`,
     );
 
     const results = await this.geocodingService.batchGeocode(
@@ -80,6 +83,6 @@ export class ScraperGeocodingService {
 
   clearCache() {
     this.geocodingService.clearCache();
-    this.logger.log('Scraper geocoding cache cleared');
+    this.logger.log("Scraper geocoding cache cleared");
   }
 }

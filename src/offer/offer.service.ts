@@ -1,13 +1,15 @@
+import { Offer } from "@prisma/client";
+
 import {
-  Injectable,
-  NotFoundException,
   ConflictException,
+  Injectable,
   Logger,
-} from '@nestjs/common';
-import { Offer } from '@prisma/client';
-import { DatabaseService } from '../database/database.service';
-import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferDto } from './dto/update-offer.dto';
+  NotFoundException,
+} from "@nestjs/common";
+
+import { DatabaseService } from "../database/database.service";
+import { CreateOfferDto } from "./dto/create-offer.dto";
+import { UpdateOfferDto } from "./dto/update-offer.dto";
 
 @Injectable()
 export class OfferService {
@@ -21,8 +23,8 @@ export class OfferService {
 
   async findOne(id: number): Promise<Offer> {
     const offer = await this.database.offer.findUnique({ where: { id } });
-    if (!offer) {
-      throw new NotFoundException(`Offer with ID ${id} not found`);
+    if (offer === null) {
+      throw new NotFoundException(`Offer with ID ${String(id)} not found`);
     }
     return offer;
   }
@@ -38,25 +40,25 @@ export class OfferService {
     const { link } = createOfferDto;
 
     if (!link) {
-      throw new Error('Link is required to create or update an offer');
+      throw new Error("Link is required to create or update an offer");
     }
 
     const existingOffer = await this.database.offer.findUnique({
       where: { link },
     });
 
-    if (existingOffer) {
-      this.logger.debug(`Updating existing offer: ${link}`);
-      const updatedOffer = await this.update(
-        existingOffer.id,
-        createOfferDto as UpdateOfferDto,
-      );
-      return { offer: updatedOffer, created: false };
-    } else {
+    if (existingOffer === null) {
       this.logger.debug(`Creating new offer: ${link}`);
       const newOffer = await this.create(createOfferDto);
       return { offer: newOffer, created: true };
     }
+
+    this.logger.debug(`Updating existing offer: ${link}`);
+    const updatedOffer = await this.update(
+      existingOffer.id,
+      createOfferDto as UpdateOfferDto,
+    );
+    return { offer: updatedOffer, created: false };
   }
 
   async create(createOfferDto: CreateOfferDto): Promise<Offer> {
@@ -66,14 +68,13 @@ export class OfferService {
       },
     });
 
-    if (existing) {
-      throw new ConflictException('Offer with this link already exists');
+    if (existing !== null) {
+      throw new ConflictException("Offer with this link already exists");
     }
 
-    const dataToCreate = {
-      ...createOfferDto,
-      createdAt: createOfferDto.createdAt || new Date(),
-    };
+    const dataToCreate = Object.assign({}, createOfferDto, {
+      createdAt: createOfferDto.createdAt ?? new Date(),
+    });
 
     return this.database.offer.create({
       data: dataToCreate,
@@ -85,10 +86,9 @@ export class OfferService {
 
     return this.database.offer.update({
       where: { id },
-      data: {
-        ...updateOfferDto,
+      data: Object.assign({}, updateOfferDto, {
         updatedAt: new Date(),
-      },
+      }),
     });
   }
 
@@ -101,7 +101,7 @@ export class OfferService {
 
   async deleteExpiredOffers(): Promise<{ count: number }> {
     const thresholdDate = new Date();
-    thresholdDate.setMonth(thresholdDate.getMonth() - 3); // 3 months old
+    thresholdDate.setMonth(thresholdDate.getMonth() - 3);
 
     const result = await this.database.offer.deleteMany({
       where: {
@@ -136,15 +136,15 @@ export class OfferService {
       this.database.offer.count(),
       this.database.offer.count({ where: { available: true } }),
       this.database.offer.groupBy({
-        by: ['source'],
+        by: ["source"],
         _count: { id: true },
       }),
       this.database.offer.groupBy({
-        by: ['city'],
+        by: ["city"],
         _count: { id: true },
         orderBy: {
           _count: {
-            id: 'desc',
+            id: "desc",
           },
         },
         take: 10,

@@ -1,10 +1,10 @@
-import {
-  BuildingType,
+import type {
   AlertStatus,
+  BuildingType,
   NotificationMethod,
   OwnerType,
   ParkingType,
-} from '@prisma/client';
+} from "@prisma/client";
 
 export class AlertResponseDto {
   id: number;

@@ -1,31 +1,64 @@
 {
   "name": "mieszkaniownik",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
   "private": true,
+  "description": "",
   "license": "MIT",
+  "author": "",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/src/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:email": "node test-email-oauth.js",
-    "oauth2:tokens": "node get-oauth2-tokens.js",
-    "oauth2:tokens:web": "node get-oauth2-tokens.js $1 $2 --web",
-    "oauth2:diagnose": "node diagnose-oauth2.js",
+    "cleanup": "bash cleanup-processes.sh",
+    "cleanup:silent": "bash cleanup-processes.sh --silent",
     "email:health": "curl http://localhost:3000/health/email",
     "email:setup": "echo 'Follow these steps:' && echo '1. npm run oauth2:tokens CLIENT_ID CLIENT_SECRET' && echo '2. Update .env with OAuth2 credentials' && echo '3. npm run test:email' && echo '4. npm run email:health'",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format:check": "prettier --check .",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "oauth2:diagnose": "node diagnose-oauth2.js",
+    "oauth2:tokens": "node get-oauth2-tokens.js",
+    "oauth2:tokens:web": "node get-oauth2-tokens.js $1 $2 --web",
+    "predev": "npm run cleanup:silent",
+    "prepare": "husky || true",
+    "prestart": "npm run cleanup:silent",
+    "start": "nest start",
+    "start:debug": "nest start --debug --watch",
+    "prestart:dev": "npm run cleanup:silent",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/src/main",
+    "pretest": "npm run cleanup:silent",
+    "test": "jest",
+    "posttest": "npm run cleanup:silent",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:discord": "ts-node test-discord-images.ts",
+    "pretest:e2e": "npm run cleanup:silent",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "posttest:e2e": "npm run cleanup:silent",
+    "test:email": "node test-email-oauth.js",
     "test:google-ai": "ts-node test-google-ai-extraction.ts",
-    "test:discord": "ts-node test-discord-images.ts"
+    "test:watch": "jest --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "lint-staged": {
+    "*": "prettier -w --ignore-unknown"
+  },
+  "prettier": "@solvro/config/prettier",
+  "jest": {
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testEnvironment": "node",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    }
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -72,11 +105,13 @@
     "typescript": "^5.7.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@solvro/config": "^2.0.7",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
@@ -86,7 +121,9 @@
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.0.0",
+    "lint-staged": "^16.2.4",
     "prettier": "^3.4.2",
     "prisma": "^6.16.2",
     "source-map-support": "^0.5.21",
@@ -98,22 +135,5 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }

@@ -44,8 +44,8 @@ export interface HeatmapData {
 export interface GeocodeResult {
   lat: number;
   lng: number;
-  accuracy: 'high' | 'medium' | 'low';
-  source: 'cache' | 'api';
+  accuracy: "high" | "medium" | "low";
+  source: "cache" | "api";
 }
 
 export interface HeatmapQuery {

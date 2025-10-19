@@ -1,12 +1,14 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { OlxScraperService } from '../services/olx-scraper.service';
-import { BrowserSetupService } from '../services/browser-setup.service';
+import { Job } from "bullmq";
 
-@Processor('olx-existing', {
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+
+import { BrowserSetupService } from "../services/browser-setup.service";
+import { OlxScraperService } from "../services/olx-scraper.service";
+
+@Processor("olx-existing", {
   concurrency: 2,
-  lockDuration: 120000,
+  lockDuration: 120_000,
 })
 export class OlxExistingProcessor extends WorkerHost {
   private readonly logger = new Logger(OlxExistingProcessor.name);

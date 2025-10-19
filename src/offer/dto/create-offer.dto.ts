@@ -1,183 +1,184 @@
+import { BuildingType, OwnerType, ParkingType } from "@prisma/client";
+import { Type } from "class-transformer";
 import {
-  IsString,
-  IsNumber,
-  IsInt,
+  IsArray,
   IsBoolean,
   IsDate,
-  IsOptional,
-  Min,
-  Max,
-  IsIn,
+  IsEnum,
+  IsInt,
   IsNotEmpty,
-  IsArray,
-} from 'class-validator';
-import { OwnerType, BuildingType, ParkingType } from '@prisma/client';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from "class-validator";
+
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateOfferDto {
-  @ApiProperty({ description: 'Unique link to the offer' })
+  @ApiProperty({ description: "Unique link to the offer" })
   @IsString()
   @IsNotEmpty()
   link: string;
 
-  @ApiProperty({ description: 'Title of the offer' })
+  @ApiProperty({ description: "Title of the offer" })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ description: 'Price in PLN' })
+  @ApiProperty({ description: "Price in PLN" })
   @IsNumber()
   @Min(0)
-  @Max(10000000)
+  @Max(10_000_000)
   price: number;
 
-  @ApiProperty({ description: 'City where the offer is located' })
+  @ApiProperty({ description: "City where the offer is located" })
   @IsString()
   @IsNotEmpty()
   city: string;
 
-  @ApiPropertyOptional({ description: 'District within the city' })
+  @ApiPropertyOptional({ description: "District within the city" })
   @IsString()
   @IsOptional()
   district?: string;
 
-  @ApiPropertyOptional({ description: 'Footage in square meters' })
+  @ApiPropertyOptional({ description: "Footage in square meters" })
   @IsNumber()
   @Min(0)
   @Max(1000)
   @IsOptional()
   footage?: number;
 
-  @ApiPropertyOptional({ description: 'Description of the offer' })
+  @ApiPropertyOptional({ description: "Description of the offer" })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'AI-generated summary' })
+  @ApiPropertyOptional({ description: "AI-generated summary" })
   @IsString()
   @IsOptional()
   summary?: string;
 
-  @ApiPropertyOptional({ description: 'Street name' })
+  @ApiPropertyOptional({ description: "Street name" })
   @IsString()
   @IsOptional()
   street?: string;
 
-  @ApiPropertyOptional({ description: 'Street number' })
+  @ApiPropertyOptional({ description: "Street number" })
   @IsString()
   @IsOptional()
   streetNumber?: string;
 
-  @ApiPropertyOptional({ description: 'Latitude coordinate' })
+  @ApiPropertyOptional({ description: "Latitude coordinate" })
   @IsNumber()
   @IsOptional()
   latitude?: number;
 
-  @ApiPropertyOptional({ description: 'Longitude coordinate' })
+  @ApiPropertyOptional({ description: "Longitude coordinate" })
   @IsNumber()
   @IsOptional()
   longitude?: number;
 
-  @ApiPropertyOptional({ description: 'Type of owner' })
-  @IsIn(Object.values(OwnerType))
+  @ApiPropertyOptional({ description: "Type of owner" })
+  @IsEnum(OwnerType)
   @IsOptional()
   ownerType?: OwnerType;
 
-  @ApiPropertyOptional({ description: 'Type of building' })
-  @IsIn(Object.values(BuildingType))
+  @ApiPropertyOptional({ description: "Type of building" })
+  @IsEnum(BuildingType)
   @IsOptional()
   buildingType?: BuildingType;
 
-  @ApiPropertyOptional({ description: 'Type of parking' })
-  @IsIn(Object.values(ParkingType))
+  @ApiPropertyOptional({ description: "Type of parking" })
+  @IsEnum(ParkingType)
   @IsOptional()
   parkingType?: ParkingType;
 
-  @ApiPropertyOptional({ description: 'Number of rooms' })
+  @ApiPropertyOptional({ description: "Number of rooms" })
   @IsInt()
   @Min(0)
   @Max(10)
   @IsOptional()
   rooms?: number;
 
-  @ApiPropertyOptional({ description: 'Floor number' })
+  @ApiPropertyOptional({ description: "Floor number" })
   @IsInt()
   @Min(0)
   @Max(50)
   @IsOptional()
   floor?: number;
 
-  @ApiPropertyOptional({ description: 'Has elevator' })
+  @ApiPropertyOptional({ description: "Has elevator" })
   @IsBoolean()
   @IsOptional()
   elevator?: boolean;
 
-  @ApiPropertyOptional({ description: 'Is furnished' })
+  @ApiPropertyOptional({ description: "Is furnished" })
   @IsBoolean()
   @IsOptional()
   furniture?: boolean;
 
-  @ApiPropertyOptional({ description: 'Pets allowed' })
+  @ApiPropertyOptional({ description: "Pets allowed" })
   @IsBoolean()
   @IsOptional()
   pets?: boolean;
 
-  @ApiPropertyOptional({ description: 'Additional rent (czynsz)' })
+  @ApiPropertyOptional({ description: "Additional rent (czynsz)" })
   @IsNumber()
   @Min(0)
   @IsOptional()
   rentAdditional?: number;
 
-  @ApiPropertyOptional({ description: 'Price is negotiable' })
+  @ApiPropertyOptional({ description: "Price is negotiable" })
   @IsBoolean()
   @IsOptional()
   negotiable?: boolean;
 
-  @ApiPropertyOptional({ description: 'Contact information' })
+  @ApiPropertyOptional({ description: "Contact information" })
   @IsString()
   @IsOptional()
   contact?: string;
 
-  @ApiPropertyOptional({ description: 'Number of views' })
+  @ApiPropertyOptional({ description: "Number of views" })
   @IsInt()
   @Min(0)
   @IsOptional()
   views?: number;
 
-  @ApiPropertyOptional({ description: 'Creation date' })
+  @ApiPropertyOptional({ description: "Creation date" })
   @IsDate()
   @Type(() => Date)
   @IsOptional()
   createdAt?: Date;
 
-  @ApiProperty({ description: 'Source of the offer (olx, otodom, etc.)' })
+  @ApiProperty({ description: "Source of the offer (olx, otodom, etc.)" })
   @IsString()
   @IsNotEmpty()
   source: string;
 
-  @ApiPropertyOptional({ description: 'Is this a new offer' })
+  @ApiPropertyOptional({ description: "Is this a new offer" })
   @IsBoolean()
   @IsOptional()
   isNew?: boolean;
 
-  @ApiPropertyOptional({ description: 'Array of image URLs' })
+  @ApiPropertyOptional({ description: "Array of image URLs", isArray: true })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   images?: string[];
 
-  @ApiPropertyOptional({ description: 'Additional information' })
+  @ApiPropertyOptional({ description: "Additional information" })
   @IsString()
   @IsOptional()
   infoAdditional?: string;
 
-  @ApiPropertyOptional({ description: 'Media information' })
+  @ApiPropertyOptional({ description: "Media information" })
   @IsString()
   @IsOptional()
   media?: string;
 
-  @ApiPropertyOptional({ description: 'Furnishing details' })
+  @ApiPropertyOptional({ description: "Furnishing details" })
   @IsString()
   @IsOptional()
   furnishing?: string;
@@ -187,21 +188,21 @@ export function dtoToString(dto: CreateOfferDto): string {
   return `
 Link: ${dto.link}
 Title: ${dto.title}
-Price: ${dto.price}
-Footage: ${dto.footage ?? 'N/A'}
-Rooms: ${dto.rooms ?? 'N/A'}
+Price: ${String(dto.price)}
+Footage: ${dto.footage === undefined ? "N/A" : String(dto.footage)}
+Rooms: ${dto.rooms === undefined ? "N/A" : String(dto.rooms)}
 City: ${dto.city}
-District: ${dto.district ?? 'N/A'}
-Street: ${dto.street ?? 'N/A'}
-Street Number: ${dto.streetNumber ?? 'N/A'}
-Building Type: ${dto.buildingType ?? 'N/A'}
-Owner Type: ${dto.ownerType ?? 'N/A'}
-Furniture: ${dto.furniture !== undefined ? dto.furniture : 'N/A'}
-Negotiable: ${dto.negotiable !== undefined ? dto.negotiable : 'N/A'}
-Pets allowed: ${dto.pets !== undefined ? dto.pets : 'N/A'}
-Floor: ${dto.floor ?? 'N/A'}
-Elevator: ${dto.elevator !== undefined ? dto.elevator : 'N/A'}
+District: ${dto.district ?? "N/A"}
+Street: ${dto.street ?? "N/A"}
+Street Number: ${dto.streetNumber ?? "N/A"}
+Building Type: ${dto.buildingType ?? "N/A"}
+Owner Type: ${dto.ownerType ?? "N/A"}
+Furniture: ${dto.furniture === undefined ? "N/A" : String(dto.furniture)}
+Negotiable: ${dto.negotiable === undefined ? "N/A" : String(dto.negotiable)}
+Pets allowed: ${dto.pets === undefined ? "N/A" : String(dto.pets)}
+Floor: ${dto.floor === undefined ? "N/A" : String(dto.floor)}
+Elevator: ${dto.elevator === undefined ? "N/A" : String(dto.elevator)}
 Source: ${dto.source}
-Views: ${dto.views ?? 0}
+Views: ${String(dto.views ?? 0)}
 `.trim();
 }

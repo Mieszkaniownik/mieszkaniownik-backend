@@ -5,5 +5,8 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "globalSetup": "./jest-global-setup.ts",
+  "globalTeardown": "./jest-global-teardown.ts",
+  "forceExit": true
 }

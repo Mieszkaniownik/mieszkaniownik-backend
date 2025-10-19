@@ -1,26 +1,28 @@
+import { Job, Queue } from "bullmq";
+
 import {
+  InjectQueue,
+  OnWorkerEvent,
   Processor,
   WorkerHost,
-  OnWorkerEvent,
-  InjectQueue,
-} from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job, Queue } from 'bullmq';
-import { EmailService } from './services/email.service';
-import { DiscordService } from './services/discord.service';
-import { DatabaseService } from '../database/database.service';
-import {
-  EmailJobData,
-  DiscordJobData,
-  MatchNotificationData,
-} from './dto/job-data.dto';
+} from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
 
-@Processor('notifications')
+import { DatabaseService } from "../database/database.service";
+import {
+  DiscordJobData,
+  EmailJobData,
+  MatchNotificationData,
+} from "./dto/job-data.dto";
+import { DiscordService } from "./services/discord.service";
+import { EmailService } from "./services/email.service";
+
+@Processor("notifications")
 export class NotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationProcessor.name);
 
   constructor(
-    @InjectQueue('notifications') private readonly notificationQueue: Queue,
+    @InjectQueue("notifications") private readonly notificationQueue: Queue,
     private readonly emailService: EmailService,
     private readonly discordService: DiscordService,
     private readonly databaseService: DatabaseService,
@@ -29,21 +31,25 @@ export class NotificationProcessor extends WorkerHost {
   }
 
   async process(
-    job: Job<EmailJobData | DiscordJobData | MatchNotificationData, any>,
-  ): Promise<any> {
+    job: Job<EmailJobData | DiscordJobData | MatchNotificationData>,
+  ): Promise<unknown> {
     this.logger.debug(`Processing notification job: ${job.name}`, {
       id: job.id,
     });
 
     switch (job.name) {
-      case 'send-email':
+      case "send-email": {
         return this.handleEmailJob(job as Job<EmailJobData>);
-      case 'send-discord':
+      }
+      case "send-discord": {
         return this.handleDiscordJob(job as Job<DiscordJobData>);
-      case 'match-notification':
+      }
+      case "match-notification": {
         return this.handleMatchNotification(job as Job<MatchNotificationData>);
-      default:
+      }
+      default: {
         throw new Error(`Unknown job type: ${job.name}`);
+      }
     }
   }
 
@@ -56,21 +62,21 @@ export class NotificationProcessor extends WorkerHost {
       if (success) {
         await this.updateNotificationStatus(notificationId, true);
         this.logger.log(
-          `Email notification sent successfully: ${notificationId}`,
+          `Email notification sent successfully: ${String(notificationId)}`,
         );
       } else {
         await this.updateNotificationStatus(
           notificationId,
           false,
-          'Failed to send email',
+          "Failed to send email",
         );
-        throw new Error('Email sending failed');
+        throw new Error("Email sending failed");
       }
     } catch (error) {
       await this.updateNotificationStatus(
         notificationId,
         false,
-        error instanceof Error ? error.message : 'Unknown error',
+        error instanceof Error ? error.message : "Unknown error",
       );
       throw error;
     }
@@ -89,21 +95,21 @@ export class NotificationProcessor extends WorkerHost {
       if (success) {
         await this.updateNotificationStatus(notificationId, true);
         this.logger.log(
-          `Discord notification sent successfully: ${notificationId}`,
+          `Discord notification sent successfully: ${String(notificationId)}`,
         );
       } else {
         await this.updateNotificationStatus(
           notificationId,
           false,
-          'Failed to send Discord message',
+          "Failed to send Discord message",
         );
-        throw new Error('Discord message sending failed');
+        throw new Error("Discord message sending failed");
       }
     } catch (error) {
       await this.updateNotificationStatus(
         notificationId,
         false,
-        error instanceof Error ? error.message : 'Unknown error',
+        error instanceof Error ? error.message : "Unknown error",
       );
       throw error;
     }
@@ -125,8 +131,8 @@ export class NotificationProcessor extends WorkerHost {
         },
       });
 
-      if (!match) {
-        throw new Error(`Match not found: ${matchId}`);
+      if (match === null) {
+        throw new Error(`Match not found: ${String(matchId)}`);
       }
 
       const { alert, offer } = match;
@@ -147,9 +153,8 @@ export class NotificationProcessor extends WorkerHost {
         elevator: offer.elevator,
         furniture: offer.furniture,
         pets: offer.pets,
-        rentAdditional: offer.rentAdditional
-          ? Number(offer.rentAdditional)
-          : null,
+        rentAdditional:
+          offer.rentAdditional === null ? null : Number(offer.rentAdditional),
         negotiable: offer.negotiable,
         contact: offer.contact,
         views: offer.views,
@@ -159,8 +164,8 @@ export class NotificationProcessor extends WorkerHost {
         summary: offer.summary,
         street: offer.street,
         streetNumber: offer.streetNumber,
-        latitude: offer.latitude ? Number(offer.latitude) : null,
-        longitude: offer.longitude ? Number(offer.longitude) : null,
+        latitude: offer.latitude === null ? null : Number(offer.latitude),
+        longitude: offer.longitude === null ? null : Number(offer.longitude),
         images: offer.images,
         media: offer.media,
         furnishing: offer.furnishing,
@@ -168,7 +173,7 @@ export class NotificationProcessor extends WorkerHost {
       };
 
       const emailData = this.emailService.generateMatchNotificationEmail(
-        user.name || user.username || user.email,
+        user.name ?? user.username ?? user.email,
         alert.name,
         offerData,
       );
@@ -182,7 +187,7 @@ export class NotificationProcessor extends WorkerHost {
         data: {
           title: emailData.subject,
           message: `Match found for alert: ${alert.name}`,
-          type: 'MATCH_NOTIFICATION',
+          type: "MATCH_NOTIFICATION",
           method: alert.notificationMethod,
           userId: user.id,
           alertId: alert.id,
@@ -190,10 +195,10 @@ export class NotificationProcessor extends WorkerHost {
       });
 
       if (
-        alert.notificationMethod === 'EMAIL' ||
-        alert.notificationMethod === 'BOTH'
+        alert.notificationMethod === "EMAIL" ||
+        alert.notificationMethod === "BOTH"
       ) {
-        await this.notificationQueue.add('send-email', {
+        await this.notificationQueue.add("send-email", {
           to: user.email,
           subject: emailData.subject,
           html: emailData.html,
@@ -202,11 +207,12 @@ export class NotificationProcessor extends WorkerHost {
       }
 
       if (
-        (alert.notificationMethod === 'DISCORD' ||
-          alert.notificationMethod === 'BOTH') &&
-        alert.discordWebhook
+        (alert.notificationMethod === "DISCORD" ||
+          alert.notificationMethod === "BOTH") &&
+        alert.discordWebhook !== null &&
+        alert.discordWebhook !== ""
       ) {
-        await this.notificationQueue.add('send-discord', {
+        await this.notificationQueue.add("send-discord", {
           webhookUrl: alert.discordWebhook,
           content: discordData.content,
           embeds: discordData.embeds,
@@ -220,11 +226,11 @@ export class NotificationProcessor extends WorkerHost {
       });
 
       this.logger.log(
-        `Match notification processed successfully for user ${userId}, alert ${alertId}, offer ${offerId}`,
+        `Match notification processed successfully for user ${String(userId)}, alert ${String(alertId)}, offer ${String(offerId)}`,
       );
     } catch (error) {
       this.logger.error(
-        `Failed to process match notification: ${matchId}`,
+        `Failed to process match notification: ${String(matchId)}`,
         error,
       );
       throw error;
@@ -242,9 +248,9 @@ export class NotificationProcessor extends WorkerHost {
           where: { id: notificationId },
         });
 
-      if (!existingNotification) {
+      if (existingNotification === null) {
         this.logger.warn(
-          `Notification ${notificationId} not found in database. `,
+          `Notification ${String(notificationId)} not found in database. `,
         );
         return;
       }
@@ -258,31 +264,31 @@ export class NotificationProcessor extends WorkerHost {
           updatedAt: new Date(),
         },
       });
-    } catch (err) {
+    } catch (error_) {
       this.logger.error(
-        `Failed to update notification status: ${notificationId}`,
-        err,
+        `Failed to update notification status: ${String(notificationId)}`,
+        error_,
       );
     }
   }
 
-  @OnWorkerEvent('completed')
+  @OnWorkerEvent("completed")
   onCompleted(job: Job) {
     this.logger.debug(`Job completed: ${job.name}`, { id: job.id });
   }
 
-  @OnWorkerEvent('progress')
+  @OnWorkerEvent("progress")
   onProgress(job: Job, progress: number) {
-    this.logger.debug(`Job progress: ${job.name} - ${progress}%`, {
+    this.logger.debug(`Job progress: ${job.name} - ${String(progress)}%`, {
       id: job.id,
     });
   }
 
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, err: Error) {
+  @OnWorkerEvent("failed")
+  onFailed(job: Job, error: Error) {
     this.logger.error(`Job failed: ${job.name}`, {
       id: job.id,
-      error: err.message,
+      error: error.message,
     });
   }
 }
