@@ -150,7 +150,7 @@ export class AlertController {
 
   @Patch(":id/toggle")
   @ApiOperation({
-    summary: "Toggle alert status (active/inactive)",
+    summary: "Toggle alert status",
   })
   @ApiResponse({
     status: 200,
