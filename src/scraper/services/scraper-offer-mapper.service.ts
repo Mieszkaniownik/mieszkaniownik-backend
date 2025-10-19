@@ -318,6 +318,7 @@ export class ScraperOfferMapperService {
         data[key] !== undefined &&
         data[key] !== null
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         dto[key] = data[key];
       }
     }

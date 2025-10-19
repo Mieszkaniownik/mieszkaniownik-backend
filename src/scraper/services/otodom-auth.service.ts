@@ -147,6 +147,7 @@ export class OtodomAuthService implements OnModuleInit {
 
       const page = await browser.newPage();
 
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await page.setUserAgent(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
       );
@@ -155,6 +156,7 @@ export class OtodomAuthService implements OnModuleInit {
 
       await page.evaluateOnNewDocument(() => {
         Object.defineProperty(navigator, "webdriver", {
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
           get: () => {},
         });
         Object.defineProperty(navigator, "languages", {
@@ -344,6 +346,7 @@ export class OtodomAuthService implements OnModuleInit {
 
         this.logger.log("Login successful, extracting cookies...");
 
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         const cookies = await page.cookies();
 
         const sessionCookie = cookies.find(
@@ -465,6 +468,7 @@ export class OtodomAuthService implements OnModuleInit {
         return false;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await page.setCookie(...auth.cookies);
       this.logger.debug(
         `Applied ${String(auth.cookies.length)} cookies to page for authentication`,

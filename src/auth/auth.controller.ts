@@ -125,6 +125,7 @@ export class AuthController {
     status: 302,
     description: "Redirects to Google OAuth",
   })
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   async googleAuth() {}
 
   @Get("google/callback")

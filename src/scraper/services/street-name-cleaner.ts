@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class StreetNameCleaner {
   private static readonly PROMOTIONAL_SUFFIXES = [
     "oś. Energetyki. Wynajmę mieszkanie",

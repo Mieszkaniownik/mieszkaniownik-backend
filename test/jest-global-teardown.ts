@@ -4,6 +4,7 @@ import { promisify } from "node:util";
 const execAsync = promisify(exec);
 
 async function globalTeardown() {
+  // eslint-disable-next-line no-console
   console.log("\nCleaning up browser processes after tests...\n");
 
   try {
@@ -17,10 +18,12 @@ async function globalTeardown() {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
+    // eslint-disable-next-line no-console
     console.log("Post-test cleanup completed\n");
   } catch (error) {
     console.warn("Warning: Post-test cleanup had issues:", error);
   }
 }
 
+// eslint-disable-next-line import/no-default-export
 export default globalTeardown;

@@ -230,6 +230,7 @@ export class ScraperProcessor {
           }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         const dateChars = [...dateText];
         dateDebug.push(
           `Raw date text: "${dateText}"`,

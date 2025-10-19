@@ -256,6 +256,7 @@ export class BrowserSetupService implements OnModuleDestroy {
     const userAgent =
       this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     await page.setUserAgent(userAgent);
     await page.setExtraHTTPHeaders({
       "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -278,6 +279,7 @@ export class BrowserSetupService implements OnModuleDestroy {
 
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, "webdriver", {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         get: () => {},
       });
 

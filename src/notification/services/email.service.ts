@@ -183,10 +183,12 @@ export class EmailService {
           `Attempting to send email to ${to} (attempt ${String(attempt)}/${String(retries)})`,
         );
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const info: SentMessageInfo =
           await this.transporter.sendMail(mailOptions);
 
         if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           const previewUrl = nodemailer.getTestMessageUrl(info);
           if (previewUrl !== false) {
             this.logger.log(`Preview URL: ${previewUrl}`);
@@ -194,6 +196,7 @@ export class EmailService {
         }
 
         this.logger.log(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           `Email sent successfully to ${to}: ${String(info.messageId)}`,
         );
         return true;
