@@ -84,7 +84,7 @@ jobs:
         if: always()
 
       - name: Seed database
-        run: npm run seed
+        run: npx prisma db seed
         if: always()
 
       - name: Create test database
