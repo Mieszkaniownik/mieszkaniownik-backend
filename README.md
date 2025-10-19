@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    <strong>Twój klucz do studenckiego mieszkania</strong>
+    <strong>Your key to student housing</strong>
 </p>
 
 <p align="center">
@@ -32,20 +32,20 @@
 
 [![Status](https://img.shields.io/badge/Status-Beta-orange)]() [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-## O Projekcie
+## About the Project
 
-**Mieszkaniownik** to rozwiązanie skierowane dla studentów poszukujących mieszkania lub pokoju na wynajem. Przy obecnej rotacji ofert wynajmu np. na OLX każda sekunda jest na wagę złota. Po co przepatrywać godzinami odświeżając stronę internetową, jeśli możemy po prostu utworzyć alert, wpisać jakie mieszkanie nas interesuje i jaki mamy budżet? Następnie od razu po pokazaniu się oferty dostajesz powiadomienie na maila lub Discorda z wszystkimi najważniejszymi informacjami.
+**Mieszkaniownik** is a solution designed for students looking for an apartment or room to rent. With the current turnover of rental offers on platforms like OLX, every second counts. Why spend hours refreshing the website when you can simply create an alert, specify what kind of apartment you're interested in and your budget? Then, as soon as an offer appears, you'll receive a notification via email or Discord with all the most important information.
 
-### Grupa Docelowa
+### Target Audience
 
-Studenci poszukujący pokoju lub mieszkania
+Students looking for a room or apartment
 
-### Wartość Dodana
+### Added Value
 
-- **Zaoszczędzony czas** - automatyczne monitorowanie ofert zamiast ręcznego odświeżania
-- **Szybsze znalezienie mieszkania** - natychmiastowe powiadomienia o nowych ofertach
-- **Więcej ofert do wyboru** - agregacja z wielu źródeł
-- **Redukcja stresu** - żadnego strachu i stresu związanego z poszukiwaniem mieszkania
+- **Time saved** - automatic offer monitoring instead of manual refreshing
+- **Faster apartment finding** - instant notifications about new offers
+- **More offers to choose from** - aggregation from multiple sources
+- **Stress reduction** - no fear or stress associated with apartment hunting
 
 ### API Documentation
 

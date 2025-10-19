@@ -34,7 +34,7 @@ export class HeatmapController {
   @Get("data")
   @Public()
   @ApiOperation({
-    summary: "Get heatmap heat layer data for all offers (public access)",
+    summary: "Get heatmap heat layer data for all offers",
   })
   @ApiResponse({
     status: 200,
