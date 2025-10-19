@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional } from "class-validator";
+
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateMatchDto {
   @ApiProperty()

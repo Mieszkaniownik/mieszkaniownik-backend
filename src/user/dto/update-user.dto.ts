@@ -1,8 +1,8 @@
-import { IsBoolean } from 'class-validator';
-import { PartialType } from '@nestjs/swagger';
+import { IsBoolean } from "class-validator";
 
-import { RegisterDto } from './register.dto';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from "@nestjs/swagger";
+
+import { RegisterDto } from "./register.dto";
 
 export class UpdateUserDto extends PartialType(RegisterDto) {
   @ApiProperty()

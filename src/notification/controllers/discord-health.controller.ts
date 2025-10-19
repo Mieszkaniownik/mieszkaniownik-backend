@@ -1,27 +1,28 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { DiscordService } from '../services/discord.service';
+import { Controller, Get } from "@nestjs/common";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
-@ApiTags('health')
-@Controller('health/discord')
+import { DiscordService } from "../services/discord.service";
+
+@ApiTags("health")
+@Controller("health/discord")
 export class DiscordHealthController {
   constructor(private readonly discordService: DiscordService) {}
 
   @Get()
   @ApiOperation({
-    summary: 'Check Discord service health status',
+    summary: "Check Discord service health status",
   })
   @ApiResponse({
     status: 200,
-    description: 'Discord health check completed',
+    description: "Discord health check completed",
   })
   checkDiscordHealth() {
     try {
       const isConnected = this.discordService.testConnection();
 
       return {
-        status: isConnected ? 'healthy' : 'unhealthy',
-        service: 'discord',
+        status: isConnected ? "healthy" : "unhealthy",
+        service: "discord",
         timestamp: new Date().toISOString(),
         details: {
           clientReady: isConnected,
@@ -30,16 +31,16 @@ export class DiscordHealthController {
       };
     } catch (error) {
       return {
-        status: 'unhealthy',
-        service: 'discord',
+        status: "unhealthy",
+        service: "discord",
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
   private getDiscordConfigStatus() {
-    const hasBotToken = !!process.env.DISCORD_BOT_TOKEN;
+    const hasBotToken = Boolean(process.env.DISCORD_BOT_TOKEN);
 
     return {
       botToken: hasBotToken,

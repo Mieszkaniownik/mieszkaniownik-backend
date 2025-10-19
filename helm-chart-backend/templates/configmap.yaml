@@ -1,0 +1,28 @@
+{{- if .Values.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mieszkaniownik-backend.configName" . }}
+  labels:
+    {{- include "mieszkaniownik-backend.labels" . | nindent 4 }}
+data:
+  {{- if .Values.config.database }}
+  DB_MAX_CONNECTIONS: {{ .Values.config.database.maxConnections | quote }}
+  DB_SSL: {{ .Values.config.database.ssl | quote }}
+  {{- end }}
+  {{- if .Values.config.redis }}
+  REDIS_TTL: {{ .Values.config.redis.ttl | quote }}
+  {{- end }}
+  {{- if .Values.config.scraper }}
+  SCRAPER_CRON: {{ .Values.config.scraper.interval | quote }}
+  SCRAPER_MAX_PAGES: {{ .Values.config.scraper.maxPages | quote }}
+  {{- end }}
+  {{- if .Values.config.notifications }}
+  {{- if .Values.config.notifications.discord }}
+  DISCORD_NOTIFICATIONS_ENABLED: {{ .Values.config.notifications.discord.enabled | quote }}
+  {{- end }}
+  {{- if .Values.config.notifications.email }}
+  EMAIL_NOTIFICATIONS_ENABLED: {{ .Values.config.notifications.email.enabled | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}

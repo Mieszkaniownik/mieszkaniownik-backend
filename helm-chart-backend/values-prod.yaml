@@ -1,0 +1,130 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets:
+    - name: prod-registry-secret
+
+backend:
+  replicaCount: 3
+
+  image:
+    tag: "v1.0.0"
+    pullPolicy: IfNotPresent
+
+  env:
+    NODE_ENV: production
+    LOG_LEVEL: "warn"
+    ENABLE_SWAGGER: "false"
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+postgresql:
+  enabled: true
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "ssd"
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    service:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+
+redis:
+  enabled: true
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: "ssd"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+databaseJobs:
+  migrate:
+    enabled: true
+  seed:
+    enabled: false
+
+secrets:
+  postgresql:
+    POSTGRES_PASSWORD: ""
+  app:
+    JWT_SECRET: ""
+    GOOGLE_CLIENT_ID: ""
+    GOOGLE_CLIENT_SECRET: ""
+    DISCORD_WEBHOOK_URL: ""
+    EMAIL_USER: ""
+    EMAIL_PASS: ""
+
+config:
+  database:
+    maxConnections: 20
+    ssl: true
+  redis:
+    ttl: 7200
+  scraper:
+    interval: "0 */6 * * *"
+    maxPages: 100
+  notifications:
+    discord:
+      enabled: true
+    email:
+      enabled: true
+
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "200"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+  hosts:
+    - host: api.mieszkaniownik.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend
+  tls:
+    - secretName: mieszkaniownik-backend-prod-tls
+      hosts:
+        - api.mieszkaniownik.com
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1001
+  capabilities:
+    drop:
+      - ALL
+
+networkPolicy:
+  enabled: true

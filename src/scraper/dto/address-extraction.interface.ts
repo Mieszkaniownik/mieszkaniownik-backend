@@ -3,6 +3,6 @@ export interface AddressExtractionResult {
   streetNumber?: string;
   fullAddress?: string;
   confidence?: number;
-  extractedFrom: 'title' | 'description' | 'both';
+  extractedFrom: "title" | "description" | "both";
   rawText: string;
 }

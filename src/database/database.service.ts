@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
-import type { DatabaseStatsDto } from './dto/database-stats.dto';
+import type { DatabaseStatsDto } from "./dto/database-stats.dto";
 
 @Injectable()
 export class DatabaseService
@@ -38,7 +38,7 @@ export class DatabaseService
 
   async getAllOffers() {
     return this.offer.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: 50,
     });
   }

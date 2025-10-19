@@ -4,10 +4,11 @@ import {
   IsString,
   MaxLength,
   Validate,
-} from 'class-validator';
+} from "class-validator";
 
-import { ApiProperty } from '@nestjs/swagger';
-import { NicePassword } from '../../validators/password.validator';
+import { ApiProperty } from "@nestjs/swagger";
+
+import { NicePassword } from "../../validators/password.validator";
 
 export class LoginDto {
   @ApiProperty()

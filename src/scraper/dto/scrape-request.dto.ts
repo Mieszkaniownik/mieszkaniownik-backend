@@ -1,5 +1,6 @@
-import { IsEnum, IsOptional } from 'class-validator';
-import { SortOrder } from '../scraper.service';
+import { IsEnum, IsOptional } from "class-validator";
+
+import { SortOrder } from "../scraper.service";
 
 export class ScrapeRequestDto {
   @IsOptional()

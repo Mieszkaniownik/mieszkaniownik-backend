@@ -1,44 +1,44 @@
-import { Role, User } from '@prisma/client';
-import { hash } from 'bcrypt';
+import { Role, User } from "@prisma/client";
+import { hash } from "bcrypt";
 
 import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
-import { DatabaseService } from '../database/database.service';
-import { RegisterDto } from './dto/register.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserResponseDto, userToMetadata } from './dto/user-response.dto';
+import { DatabaseService } from "../database/database.service";
+import { RegisterDto } from "./dto/register.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { UserResponseDto, userToMetadata } from "./dto/user-response.dto";
 
 @Injectable()
 export class UserService {
   constructor(private database: DatabaseService) {}
 
-  async create(RegisterDto: RegisterDto): Promise<UserResponseDto> {
-    const hashedPassword = RegisterDto.password
-      ? await hash(RegisterDto.password, 10)
+  async create(registerDto: RegisterDto): Promise<UserResponseDto> {
+    const hashedPassword = registerDto.password
+      ? await hash(registerDto.password, 10)
       : undefined;
 
     const user = await this.database.user.create({
       data: {
-        email: RegisterDto.email,
+        email: registerDto.email,
         password: hashedPassword,
-        username: RegisterDto.username,
-        name: RegisterDto.name,
-        surname: RegisterDto.surname,
-        phone: RegisterDto.phone,
-        city: RegisterDto.city,
+        username: registerDto.username,
+        name: registerDto.name,
+        surname: registerDto.surname,
+        phone: registerDto.phone,
+        city: registerDto.city,
         role: Role.USER,
-        googleId: RegisterDto.googleId,
+        googleId: registerDto.googleId,
       },
     });
     return userToMetadata(user);
   }
 
-  async createGoogleUser(RegisterDto: RegisterDto): Promise<UserResponseDto> {
-    return this.create(RegisterDto);
+  async createGoogleUser(registerDto: RegisterDto): Promise<UserResponseDto> {
+    return this.create(registerDto);
   }
 
   async updateGoogleId(
@@ -99,12 +99,12 @@ export class UserService {
     const isAdmin = currentUser.role === Role.ADMIN;
     if (!isAdmin && currentUser.email !== email) {
       throw new ForbiddenException(
-        'Admin rights required to update other users.',
+        "Admin rights required to update other users.",
       );
     }
     const updateData: Partial<UpdateUserDto & { password?: string }> =
       Object.assign({}, updateUserDto);
-    if (updateUserDto.password != null && updateUserDto.password !== '') {
+    if (updateUserDto.password != null && updateUserDto.password !== "") {
       updateData.password = await hash(updateUserDto.password, 10);
     }
     const user = await this.database.user.update({

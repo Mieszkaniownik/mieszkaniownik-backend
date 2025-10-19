@@ -1,12 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import type { AddressExtractionResult } from '../dto/address-extraction.interface';
+import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
+
+import { Injectable, Logger } from "@nestjs/common";
+
+import type { AddressExtractionResult } from "../dto/address-extraction.interface";
 
 interface aiResponse {
   street?: string;
   streetNumber?: string;
   estateName?: string;
-  confidence?: 'high' | 'medium' | 'low' | 'none';
+  confidence?: "high" | "medium" | "low" | "none";
   found: boolean;
 }
 
@@ -18,9 +20,9 @@ export class aiAddressExtractorService {
 
   constructor() {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) {
+    if (apiKey === undefined || apiKey === "") {
       this.logger.warn(
-        'GOOGLE_AI_API_KEY not set, AI address extraction will be disabled',
+        "GOOGLE_AI_API_KEY not set, AI address extraction will be disabled",
       );
       this.genAI = null;
       this.model = null;
@@ -30,12 +32,12 @@ export class aiAddressExtractorService {
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.model = this.genAI.getGenerativeModel({
-        model: 'models/gemini-2.0-flash',
+        model: "models/gemini-2.0-flash",
       });
-      this.logger.log('AI service initialized successfully');
+      this.logger.log("AI service initialized successfully");
     } catch (error) {
       this.logger.error(
-        `Failed to initialize AI service: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to initialize AI service: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       this.genAI = null;
       this.model = null;
@@ -46,19 +48,19 @@ export class aiAddressExtractorService {
     title: string,
     description?: string,
   ): Promise<AddressExtractionResult | null> {
-    if (!this.model) {
-      this.logger.warn('AI model not initialized, skipping AI extraction');
+    if (this.model === null) {
+      this.logger.warn("AI model not initialized, skipping AI extraction");
       return null;
     }
 
     try {
-      const textToAnalyze = description ? `${title}. ${description}` : title;
+      const textToAnalyze =
+        description !== undefined && description !== ""
+          ? `${title}. ${description}`
+          : title;
 
       this.logger.log(
-        `Extracting address using AI from: "${textToAnalyze.substring(
-          0,
-          100,
-        )}..."`,
+        `Extracting address using AI from: "${textToAnalyze.slice(0, 100)}..."`,
       );
 
       const prompt = this.buildExtractionPrompt(textToAnalyze);
@@ -72,7 +74,7 @@ export class aiAddressExtractorService {
     } catch (error) {
       this.logger.error(
         `Error extracting address with AI: ${
-          error instanceof Error ? error.message : 'Unknown error'
+          error instanceof Error ? error.message : "Unknown error"
         }`,
       );
       return null;
@@ -132,10 +134,10 @@ RESPOND WITH ONLY THE JSON, NO OTHER TEXT:`;
   ): AddressExtractionResult {
     try {
       const cleanResponse = response
-        .replace(/```json\s*/g, '')
-        .replace(/```\s*/g, '')
-        .replace(/^[^{]*/, '')
-        .replace(/[^}]*$/, '')
+        .replaceAll(/```json\s*/g, "")
+        .replaceAll(/```\s*/g, "")
+        .replace(/^[^{]*/, "")
+        .replace(/[^}]*$/, "")
         .trim();
 
       this.logger.debug(`Cleaned AI response: ${cleanResponse}`);
@@ -144,7 +146,7 @@ RESPOND WITH ONLY THE JSON, NO OTHER TEXT:`;
 
       if (!parsed.found) {
         return {
-          extractedFrom: 'title',
+          extractedFrom: "title",
           rawText,
           confidence: 0,
         };
@@ -152,21 +154,34 @@ RESPOND WITH ONLY THE JSON, NO OTHER TEXT:`;
 
       let confidence = 0;
       switch (parsed.confidence?.toLowerCase()) {
-        case 'high':
+        case "high": {
           confidence = 0.95;
           break;
-        case 'medium':
+        }
+        case "medium": {
           confidence = 0.75;
           break;
-        case 'low':
+        }
+        case "low": {
           confidence = 0.55;
           break;
-        default:
+        }
+        case undefined: {
           confidence = 0.5;
+          break;
+        }
+        default: {
+          confidence = 0.5;
+        }
       }
 
-      let extractedFrom: 'title' | 'description' | 'both' = 'title';
-      if (description && parsed.street) {
+      let extractedFrom: "title" | "description" | "both" = "title";
+      if (
+        description !== undefined &&
+        description !== "" &&
+        parsed.street !== undefined &&
+        parsed.street !== ""
+      ) {
         const inTitle = title
           .toLowerCase()
           .includes(parsed.street.toLowerCase());
@@ -175,57 +190,63 @@ RESPOND WITH ONLY THE JSON, NO OTHER TEXT:`;
           .includes(parsed.street.toLowerCase());
 
         if (inTitle && inDescription) {
-          extractedFrom = 'both';
+          extractedFrom = "both";
         } else if (inDescription) {
-          extractedFrom = 'description';
+          extractedFrom = "description";
         }
       }
 
-      let fullAddress = '';
-      if (parsed.street && parsed.streetNumber) {
+      let fullAddress = "";
+      if (
+        parsed.street !== undefined &&
+        parsed.street !== "" &&
+        parsed.streetNumber !== undefined &&
+        parsed.streetNumber !== ""
+      ) {
         fullAddress = `${parsed.street} ${parsed.streetNumber}`;
-      } else if (parsed.street) {
+      } else if (parsed.street !== undefined && parsed.street !== "") {
         fullAddress = parsed.street;
       }
 
-      if (parsed.estateName) {
-        fullAddress = fullAddress
-          ? `${fullAddress}, ${parsed.estateName}`
-          : parsed.estateName;
+      if (parsed.estateName !== undefined && parsed.estateName !== "") {
+        fullAddress =
+          fullAddress === ""
+            ? parsed.estateName
+            : `${fullAddress}, ${parsed.estateName}`;
       }
 
       const result: AddressExtractionResult = {
-        street: parsed.street || undefined,
-        streetNumber: parsed.streetNumber || undefined,
-        fullAddress: fullAddress || undefined,
+        street: parsed.street ?? undefined,
+        streetNumber: parsed.streetNumber ?? undefined,
+        fullAddress: fullAddress === "" ? undefined : fullAddress,
         confidence,
         extractedFrom,
         rawText,
       };
 
       const extractionDetails: string[] = [];
-      if (result.street) {
+      if (result.street !== undefined && result.street !== "") {
         extractionDetails.push(`street: ${result.street}`);
       }
-      if (result.streetNumber) {
+      if (result.streetNumber !== undefined && result.streetNumber !== "") {
         extractionDetails.push(`number: ${result.streetNumber}`);
       }
 
       this.logger.log(
-        `AI extracted (${extractionDetails.join(', ')}) → ${result.fullAddress} (confidence: ${confidence})`,
+        `AI extracted (${extractionDetails.join(", ")}) → ${result.fullAddress ?? "N/A"} (confidence: ${String(confidence)})`,
       );
 
       return result;
     } catch (parseError) {
       this.logger.error(
         `Error parsing AI response: ${
-          parseError instanceof Error ? parseError.message : 'Unknown error'
+          parseError instanceof Error ? parseError.message : "Unknown error"
         }`,
       );
       this.logger.debug(`Raw response that failed to parse: ${response}`);
 
       return {
-        extractedFrom: 'title',
+        extractedFrom: "title",
         rawText,
         confidence: 0,
       };
@@ -233,21 +254,21 @@ RESPOND WITH ONLY THE JSON, NO OTHER TEXT:`;
   }
 
   isAvailable(): boolean {
-    return !!this.model;
+    return Boolean(this.model);
   }
 
   async generateSummary(
     title: string,
     description: string,
   ): Promise<string | null> {
-    if (!this.model) {
-      this.logger.warn('AI model not initialized, skipping summary generation');
+    if (this.model === null) {
+      this.logger.warn("AI model not initialized, skipping summary generation");
       return null;
     }
 
     try {
       this.logger.log(
-        `Generating summary using AI for: "${title.substring(0, 50)}..."`,
+        `Generating summary using AI for: "${title.slice(0, 50)}..."`,
       );
 
       const prompt = this.buildSummaryPrompt(title, description);
@@ -256,17 +277,17 @@ RESPOND WITH ONLY THE JSON, NO OTHER TEXT:`;
       const summary = response.text().trim();
 
       const limitedSummary =
-        summary.length > 500 ? summary.substring(0, 497) + '...' : summary;
+        summary.length > 500 ? `${summary.slice(0, 497)}...` : summary;
 
       this.logger.log(
-        `Generated summary (${limitedSummary.length} chars): "${limitedSummary.substring(0, 100)}..."`,
+        `Generated summary (${String(limitedSummary.length)} chars): "${limitedSummary.slice(0, 100)}..."`,
       );
 
       return limitedSummary;
     } catch (error) {
       this.logger.error(
         `Error generating summary with AI: ${
-          error instanceof Error ? error.message : 'Unknown error'
+          error instanceof Error ? error.message : "Unknown error"
         }`,
       );
       return null;
@@ -297,17 +318,18 @@ ODPOWIEDZ TYLKO STRESZCZENIEM, BEZ DODATKOWEGO TEKSTU:`;
   }
 
   getStatus(): { available: boolean; reason?: string } {
-    if (!process.env.GOOGLE_AI_API_KEY) {
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    if (apiKey === undefined || apiKey === "") {
       return {
         available: false,
-        reason: 'GOOGLE_AI_API_KEY environment variable not set',
+        reason: "GOOGLE_AI_API_KEY environment variable not set",
       };
     }
 
-    if (!this.model) {
+    if (this.model === null) {
       return {
         available: false,
-        reason: 'AI model failed to initialize',
+        reason: "AI model failed to initialize",
       };
     }
 

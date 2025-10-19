@@ -1,8 +1,10 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { AlertStatus } from '@prisma/client';
-import { CreateAlertDto } from './create-alert.dto';
-import { IsOptional, IsInt, IsEnum, Min } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { AlertStatus } from "@prisma/client";
+import { Transform } from "class-transformer";
+import { IsEnum, IsInt, IsOptional, Min } from "class-validator";
+
+import { PartialType } from "@nestjs/mapped-types";
+
+import { CreateAlertDto } from "./create-alert.dto";
 
 export class UpdateAlertDto extends PartialType(CreateAlertDto) {
   @IsOptional()
@@ -10,7 +12,11 @@ export class UpdateAlertDto extends PartialType(CreateAlertDto) {
   status?: AlertStatus;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(String(value)) : 0))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ""
+      ? Number.parseInt(String(value))
+      : 0,
+  )
   @IsInt()
   @Min(0)
   matchesCount?: number;

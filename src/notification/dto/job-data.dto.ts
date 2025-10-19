@@ -8,19 +8,19 @@ export interface EmailJobData {
 export interface DiscordJobData {
   webhookUrl: string;
   content: string;
-  embeds?: Array<{
+  embeds?: {
     title: string;
     description: string;
     color?: number;
-    fields?: Array<{
+    fields?: {
       name: string;
       value: string;
       inline?: boolean;
-    }>;
+    }[];
     image?: {
       url: string;
     };
-  }>;
+  }[];
   notificationId: number;
 }
 

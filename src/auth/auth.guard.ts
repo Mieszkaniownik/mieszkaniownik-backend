@@ -1,43 +1,45 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { AuthGuard as PassportAuthGuard } from '@nestjs/passport';
+import { ExecutionContext, Injectable } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { AuthGuard as PassportAuthGuard } from "@nestjs/passport";
 
 @Injectable()
-export class AuthGuard extends PassportAuthGuard('jwt') {
+export class AuthGuard extends PassportAuthGuard("jwt") {
   constructor(private readonly reflector: Reflector) {
     super();
   }
 
-  canActivate(context: ExecutionContext) {
-    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>("isPublic", [
       context.getHandler(),
       context.getClass(),
     ]);
 
     if (isPublic) {
-      return super.canActivate(context);
+      const result = super.canActivate(context);
+      return result instanceof Promise ? await result : Boolean(result);
     }
 
-    return super.canActivate(context);
+    const result = super.canActivate(context);
+    return result instanceof Promise ? await result : Boolean(result);
   }
 
   handleRequest<T>(
-    err: Error | null,
+    error: Error | null,
     user: T | false,
-    info: unknown,
+    _info: unknown,
     context: ExecutionContext,
   ) {
-    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+    const isPublic = this.reflector.getAllAndOverride<boolean>("isPublic", [
       context.getHandler(),
       context.getClass(),
     ]);
 
     if (isPublic) {
-      return user || null;
+      return user === false ? null : user;
     }
 
-    if (err || !user) {
-      throw err || new Error('Unauthorized');
+    if (error !== null || user === false) {
+      throw error ?? new Error("Unauthorized");
     }
     return user;
   }

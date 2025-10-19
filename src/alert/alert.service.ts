@@ -1,24 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   AlertStatus,
-  OwnerType,
   BuildingType,
+  OwnerType,
   ParkingType,
-} from '@prisma/client';
-import { DatabaseService } from '../database/database.service';
-import { CreateAlertDto } from './dto/create-alert.dto';
-import { UpdateAlertDto } from './dto/update-alert.dto';
-import { QueryAlertsDto, AlertSortBy } from './dto/query-alerts.dto';
+} from "@prisma/client";
+
+import { Injectable, NotFoundException } from "@nestjs/common";
+
+import { DatabaseService } from "../database/database.service";
+import { CreateAlertDto } from "./dto/create-alert.dto";
+import { AlertSortBy, QueryAlertsDto } from "./dto/query-alerts.dto";
+import { UpdateAlertDto } from "./dto/update-alert.dto";
 
 @Injectable()
 export class AlertService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async create(userId: number, createAlertDto: CreateAlertDto) {
+    const data = Object.assign({}, createAlertDto, { userId });
     return this.databaseService.alert.create({
-      data: {
-        ...createAlertDto,
-      },
+      data,
       include: {
         user: {
           select: {
@@ -32,40 +33,41 @@ export class AlertService {
   }
 
   async findAll(userId: number, query?: QueryAlertsDto) {
-    const { status, sortBy, city, search, limit } = query || {};
+    const { status, sortBy, city, search, limit } = query ?? {};
 
-    const where: any = {
+    const where = {
       userId,
-      status: status || { not: AlertStatus.DELETED },
+      status: status ?? { not: AlertStatus.DELETED },
+      ...(city !== undefined && city !== "" && { city }),
+      ...(search !== undefined &&
+        search !== "" && {
+          name: {
+            contains: search,
+            mode: "insensitive" as const,
+          },
+        }),
     };
 
-    if (city) {
-      where.city = city;
-    }
+    let orderBy: Record<string, string> = { createdAt: "desc" };
 
-    if (search) {
-      where.name = {
-        contains: search,
-        mode: 'insensitive',
-      };
-    }
-
-    let orderBy: any = { createdAt: 'desc' };
-
-    if (sortBy) {
+    if (sortBy !== undefined) {
       switch (sortBy) {
-        case AlertSortBy.NEWEST:
-          orderBy = { createdAt: 'desc' };
+        case AlertSortBy.NEWEST: {
+          orderBy = { createdAt: "desc" };
           break;
-        case AlertSortBy.OLDEST:
-          orderBy = { createdAt: 'asc' };
+        }
+        case AlertSortBy.OLDEST: {
+          orderBy = { createdAt: "asc" };
           break;
-        case AlertSortBy.MATCHES:
-          orderBy = { matchesCount: 'desc' };
+        }
+        case AlertSortBy.MATCHES: {
+          orderBy = { matchesCount: "desc" };
           break;
-        case AlertSortBy.NAME:
-          orderBy = { name: 'asc' };
+        }
+        case AlertSortBy.NAME: {
+          orderBy = { name: "asc" };
           break;
+        }
       }
     }
 
@@ -79,7 +81,7 @@ export class AlertService {
         },
       },
       orderBy,
-      ...(limit && { take: limit }),
+      ...(limit !== undefined && limit > 0 && { take: limit }),
     });
   }
 
@@ -102,7 +104,7 @@ export class AlertService {
             offer: true,
           },
           orderBy: {
-            matchedAt: 'desc',
+            matchedAt: "desc",
           },
         },
         _count: {
@@ -113,8 +115,8 @@ export class AlertService {
       },
     });
 
-    if (!alert) {
-      throw new NotFoundException(`Alert with ID ${id} not found`);
+    if (alert === null) {
+      throw new NotFoundException(`Alert with ID ${String(id)} not found`);
     }
 
     return alert;
@@ -128,8 +130,8 @@ export class AlertService {
       },
     });
 
-    if (!alert) {
-      throw new NotFoundException(`Alert with ID ${id} not found`);
+    if (alert === null) {
+      throw new NotFoundException(`Alert with ID ${String(id)} not found`);
     }
 
     return this.databaseService.alert.update({
@@ -155,8 +157,8 @@ export class AlertService {
       },
     });
 
-    if (!alert) {
-      throw new NotFoundException(`Alert with ID ${id} not found`);
+    if (alert === null) {
+      throw new NotFoundException(`Alert with ID ${String(id)} not found`);
     }
 
     return this.databaseService.alert.update({
@@ -246,204 +248,116 @@ export class AlertService {
       keywords?: string[];
     },
   ): boolean {
-    console.log('MATCHING DEBUG:', {
-      offerCity: offer.city,
-      alertCity: alert.city,
-      offerPrice: offer.price,
-      alertMinPrice: alert.minPrice,
-      alertMaxPrice: alert.maxPrice,
-    });
-
-    const hasValidAlertCity = alert.city && alert.city.trim() !== '';
+    const hasValidAlertCity =
+      alert.city !== undefined && alert.city.trim() !== "";
     if (hasValidAlertCity && offer.city !== alert.city) {
-      console.log('City mismatch:', {
-        offerCity: offer.city,
-        alertCity: alert.city,
-        hasValidAlertCity,
-      });
       return false;
     }
 
     const hasValidAlertDistrict =
-      alert.district && alert.district.trim() !== '';
+      alert.district !== undefined && alert.district.trim() !== "";
     if (hasValidAlertDistrict && offer.district !== alert.district) {
-      console.log('District mismatch:', {
-        offerDistrict: offer.district,
-        alertDistrict: alert.district,
-      });
       return false;
     }
 
     if (
-      alert.minPrice &&
+      alert.minPrice !== undefined &&
       offer.price !== undefined &&
       offer.price < alert.minPrice
     ) {
-      console.log('Price too low:', {
-        offerPrice: offer.price,
-        minPrice: alert.minPrice,
-      });
       return false;
     }
 
     if (
-      alert.maxPrice &&
+      alert.maxPrice !== undefined &&
       offer.price !== undefined &&
       offer.price > alert.maxPrice
     ) {
-      console.log('Price too high:', {
-        offerPrice: offer.price,
-        maxPrice: alert.maxPrice,
-      });
       return false;
     }
 
     if (
-      alert.minFootage &&
+      alert.minFootage !== undefined &&
       offer.footage !== undefined &&
       offer.footage < alert.minFootage
     ) {
-      console.log('Footage too small:', {
-        offerFootage: offer.footage,
-        minFootage: alert.minFootage,
-      });
       return false;
     }
 
     if (
-      alert.maxFootage &&
+      alert.maxFootage !== undefined &&
       offer.footage !== undefined &&
       offer.footage > alert.maxFootage
     ) {
-      console.log('Footage too large:', {
-        offerFootage: offer.footage,
-        maxFootage: alert.maxFootage,
-      });
       return false;
     }
 
     if (
-      (alert.minRooms && offer.rooms && offer.rooms < alert.minRooms) ||
-      (alert.maxRooms && offer.rooms && offer.rooms > alert.maxRooms)
+      (alert.minRooms !== undefined &&
+        offer.rooms !== undefined &&
+        offer.rooms < alert.minRooms) ||
+      (alert.maxRooms !== undefined &&
+        offer.rooms !== undefined &&
+        offer.rooms > alert.maxRooms)
     ) {
-      console.log('Rooms range mismatch:', {
-        offerRooms: offer.rooms,
-        alertMinRooms: alert.minRooms,
-        alertMaxRooms: alert.maxRooms,
-      });
       return false;
     }
 
     if (
-      (alert.minFloor && offer.floor && offer.floor < alert.minFloor) ||
-      (alert.maxFloor && offer.floor && offer.floor > alert.maxFloor)
+      (alert.minFloor !== undefined &&
+        offer.floor !== undefined &&
+        offer.floor < alert.minFloor) ||
+      (alert.maxFloor !== undefined &&
+        offer.floor !== undefined &&
+        offer.floor > alert.maxFloor)
     ) {
-      console.log('Floor range mismatch:', {
-        offerFloor: offer.floor,
-        alertMinFloor: alert.minFloor,
-        alertMaxFloor: alert.maxFloor,
-      });
+      return false;
+    }
+
+    if (alert.ownerType !== undefined && offer.ownerType !== alert.ownerType) {
       return false;
     }
 
     if (
-      alert.ownerType !== null &&
-      alert.ownerType !== undefined &&
-      offer.ownerType !== alert.ownerType
-    ) {
-      console.log('Owner type mismatch:', {
-        offerOwnerType: offer.ownerType,
-        alertOwnerType: alert.ownerType,
-      });
-      return false;
-    }
-
-    if (
-      alert.buildingType !== null &&
       alert.buildingType !== undefined &&
       offer.buildingType !== alert.buildingType
     ) {
-      console.log('Building type mismatch:', {
-        offerBuildingType: offer.buildingType,
-        alertBuildingType: alert.buildingType,
-      });
       return false;
     }
 
     if (
-      alert.parkingType !== null &&
       alert.parkingType !== undefined &&
       offer.parkingType !== alert.parkingType
     ) {
-      console.log('Parking type mismatch:', {
-        offerParkingType: offer.parkingType,
-        alertParkingType: alert.parkingType,
-      });
       return false;
     }
 
-    if (
-      alert.furniture !== null &&
-      alert.furniture !== undefined &&
-      offer.furniture !== alert.furniture
-    ) {
-      console.log('Furniture mismatch:', {
-        offerFurniture: offer.furniture,
-        alertFurniture: alert.furniture,
-      });
+    if (alert.furniture !== undefined && offer.furniture !== alert.furniture) {
       return false;
     }
 
-    if (
-      alert.elevator !== null &&
-      alert.elevator !== undefined &&
-      offer.elevator !== alert.elevator
-    ) {
-      console.log('Elevator mismatch:', {
-        offerElevator: offer.elevator,
-        alertElevator: alert.elevator,
-      });
+    if (alert.elevator !== undefined && offer.elevator !== alert.elevator) {
       return false;
     }
 
-    if (
-      alert.pets !== null &&
-      alert.pets !== undefined &&
-      offer.pets !== alert.pets
-    ) {
-      console.log('Pets mismatch:', {
-        offerPets: offer.pets,
-        alertPets: alert.pets,
-      });
+    if (alert.pets !== undefined && offer.pets !== alert.pets) {
       return false;
     }
 
-    if (alert.keywords && alert.keywords.length > 0) {
+    if (alert.keywords !== undefined && alert.keywords.length > 0) {
       const searchText =
-        `${offer.title || ''} ${offer.description || ''}`.toLowerCase();
+        `${offer.title ?? ""} ${offer.description ?? ""}`.toLowerCase();
       const hasMatchingKeyword = alert.keywords.some(
         (keyword) =>
-          keyword.toLowerCase().trim() !== '' &&
+          keyword.toLowerCase().trim() !== "" &&
           searchText.includes(keyword.toLowerCase().trim()),
       );
 
       if (!hasMatchingKeyword) {
-        console.log('Keywords mismatch:', {
-          offerTitle: offer.title,
-          offerDescription: offer.description?.substring(0, 100),
-          alertKeywords: alert.keywords,
-        });
         return false;
       }
-
-      console.log('Keywords matched!', {
-        matchedKeywords: alert.keywords.filter((keyword) =>
-          searchText.includes(keyword.toLowerCase().trim()),
-        ),
-      });
     }
 
-    console.log('MATCH FOUND!');
     return true;
   }
 }

@@ -1,6 +1,6 @@
-import { Role, User } from '@prisma/client';
+import { Role, User } from "@prisma/client";
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class UserResponseDto {
   @ApiProperty()

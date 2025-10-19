@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { BuildingType, OwnerType, ParkingType } from '@prisma/client';
+import { BuildingType, OwnerType, ParkingType } from "@prisma/client";
+
+import { Injectable } from "@nestjs/common";
 
 export interface ParsedOfferParameters {
   footage: number | null;
@@ -27,113 +28,114 @@ export class ParameterParserService {
     const matchingKey = Object.keys(parameters).find(
       (key) => key.toLowerCase() === targetKey.toLowerCase(),
     );
-    return matchingKey ? parameters[matchingKey] : undefined;
+    return matchingKey === undefined ? undefined : parameters[matchingKey];
   }
 
-  parseBoolean(value: string | undefined, paramName: string): boolean | null {
-    if (!value) {
-      console.log(`${paramName} status not specified`);
+  parseBoolean(
+    value: string | undefined,
+    _parameterName: string,
+  ): boolean | null {
+    if (value === undefined || value === "") {
       return null;
     }
 
     const lowerValue = value.toLowerCase().trim();
-    if (lowerValue === 'tak') {
-      console.log(`${paramName} detected: true`);
+    if (lowerValue === "tak") {
       return true;
     } else if (
-      lowerValue === 'nie' ||
-      lowerValue === 'brak' ||
-      lowerValue === 'no'
+      lowerValue === "nie" ||
+      lowerValue === "brak" ||
+      lowerValue === "no"
     ) {
-      console.log(`${paramName} detected: false`);
       return false;
     } else {
-      console.log(`${paramName} status unclear - value: "${value}"`);
       return null;
     }
   }
 
-  parseFootage(surfaceStr: string): number | null {
-    const footageMatch = surfaceStr.match(/(\d+(?:[,.]\d+)?)\s*m²/);
-    return footageMatch ? parseFloat(footageMatch[1].replace(',', '.')) : null;
+  parseFootage(surfaceString: string): number | null {
+    const footageMatch = /(\d+(?:[,.]\d+)?)\s*m²/.exec(surfaceString);
+    return footageMatch === null
+      ? null
+      : Number.parseFloat(footageMatch[1].replace(",", "."));
   }
 
-  parseRooms(roomsStr: string): string | null {
-    const roomsLower = roomsStr.toLowerCase();
+  parseRooms(roomsString: string): string | null {
+    const roomsLower = roomsString.toLowerCase();
 
-    if (roomsLower.includes('kawalerka')) {
-      return '1';
-    } else if (roomsLower.includes('2 pokoje')) {
-      return '2';
-    } else if (roomsLower.includes('3 pokoje')) {
-      return '3';
-    } else if (roomsLower.includes('4 i więcej')) {
-      return '4';
+    if (roomsLower.includes("kawalerka")) {
+      return "1";
+    } else if (roomsLower.includes("2 pokoje")) {
+      return "2";
+    } else if (roomsLower.includes("3 pokoje")) {
+      return "3";
+    } else if (roomsLower.includes("4 i więcej")) {
+      return "4";
     } else {
-      const roomsMatch = roomsStr.match(/(\d+)/);
-      if (roomsMatch) {
-        const roomCount = parseInt(roomsMatch[1]);
-        return roomCount >= 4 ? '4' : roomsMatch[1];
+      const roomsMatch = /(\d+)/.exec(roomsString);
+      if (roomsMatch !== null) {
+        const roomCount = Number.parseInt(roomsMatch[1]);
+        return roomCount >= 4 ? "4" : roomsMatch[1];
       }
     }
     return null;
   }
 
-  parseFloor(floorStr: string): string | null {
-    const floorLower = floorStr.toLowerCase();
+  parseFloor(floorString: string): string | null {
+    const floorLower = floorString.toLowerCase();
 
-    if (floorLower.includes('wszystkie')) {
+    if (floorLower.includes("wszystkie")) {
       return null;
-    } else if (floorLower.includes('suterena')) {
-      return '-1';
-    } else if (floorLower.includes('parter')) {
-      return '0';
-    } else if (floorLower.includes('poddasze')) {
-      return '99';
-    } else if (floorLower.includes('powyżej 10')) {
-      return '11';
+    } else if (floorLower.includes("suterena")) {
+      return "-1";
+    } else if (floorLower.includes("parter")) {
+      return "0";
+    } else if (floorLower.includes("poddasze")) {
+      return "99";
+    } else if (floorLower.includes("powyżej 10")) {
+      return "11";
     } else {
-      const floorMatch = floorStr.match(/\d+/);
-      if (floorMatch) {
-        const floorNum = parseInt(floorMatch[0]);
-        if (floorNum >= 1 && floorNum <= 10) {
+      const floorMatch = /\d+/.exec(floorString);
+      if (floorMatch !== null) {
+        const floorNumber = Number.parseInt(floorMatch[0]);
+        if (floorNumber >= 1 && floorNumber <= 10) {
           return floorMatch[0];
-        } else if (floorNum > 10) {
-          return '11';
+        } else if (floorNumber > 10) {
+          return "11";
         }
       }
     }
     return null;
   }
 
-  parseBuildingType(buildingTypeStr: string): BuildingType {
-    const buildingTypeLower = buildingTypeStr.toLowerCase();
+  parseBuildingType(buildingTypeString: string): BuildingType {
+    const buildingTypeLower = buildingTypeString.toLowerCase();
 
     if (
-      buildingTypeLower.includes('dom wolnostojący') ||
-      buildingTypeLower.includes('wolnostojący')
+      buildingTypeLower.includes("dom wolnostojący") ||
+      buildingTypeLower.includes("wolnostojący")
     ) {
       return BuildingType.DETACHED;
     } else if (
-      buildingTypeLower.includes('dom szeregowy') ||
-      buildingTypeLower.includes('szeregowy')
+      buildingTypeLower.includes("dom szeregowy") ||
+      buildingTypeLower.includes("szeregowy")
     ) {
       return BuildingType.TERRACED;
     } else if (
-      buildingTypeLower.includes('kamienica') ||
-      buildingTypeLower.includes('tenement')
+      buildingTypeLower.includes("kamienica") ||
+      buildingTypeLower.includes("tenement")
     ) {
       return BuildingType.TENEMENT;
     } else if (
-      buildingTypeLower.includes('blok') ||
-      buildingTypeLower.includes('block')
+      buildingTypeLower.includes("blok") ||
+      buildingTypeLower.includes("block")
     ) {
       return BuildingType.BLOCK_OF_FLATS;
-    } else if (buildingTypeLower.includes('loft')) {
+    } else if (buildingTypeLower.includes("loft")) {
       return BuildingType.LOFT;
     } else if (
-      buildingTypeLower.includes('mieszkanie') ||
-      buildingTypeLower.includes('apartment')
+      buildingTypeLower.includes("mieszkanie") ||
+      buildingTypeLower.includes("apartment")
     ) {
       return BuildingType.APARTMENT;
     } else {
@@ -142,133 +144,115 @@ export class ParameterParserService {
   }
 
   parseOwnerType(parameters: Record<string, string>): OwnerType | null {
-    const ownerTypeStr = this.findParamValue(parameters, 'Prywatne') || '';
-    const firmowStr = this.findParamValue(parameters, 'Firmowe') || '';
-    const otodomOwnerTypeStr =
-      this.findParamValue(parameters, 'typ ogłoszeniodawcy') || '';
-
-    console.log('Owner type detection debug:', {
-      Prywatne: this.findParamValue(parameters, 'Prywatne'),
-      Firmowe: this.findParamValue(parameters, 'Firmowe'),
-      'typ ogłoszeniodawcy': this.findParamValue(
-        parameters,
-        'typ ogłoszeniodawcy',
-      ),
-      'All parameters': Object.keys(parameters),
-    });
+    const ownerTypeString = this.findParamValue(parameters, "Prywatne") ?? "";
+    const firmowString = this.findParamValue(parameters, "Firmowe") ?? "";
+    const otodomOwnerTypeString =
+      this.findParamValue(parameters, "typ ogłoszeniodawcy") ?? "";
 
     if (
-      ownerTypeStr.toLowerCase().includes('prywatne') ||
-      ownerTypeStr.toLowerCase().trim() === 'tak' ||
-      otodomOwnerTypeStr.toLowerCase().includes('prywatny')
+      ownerTypeString.toLowerCase().includes("prywatne") ||
+      ownerTypeString.toLowerCase().trim() === "tak" ||
+      otodomOwnerTypeString.toLowerCase().includes("prywatny")
     ) {
-      console.log('Owner type detected as PRIVATE');
       return OwnerType.PRIVATE;
     } else if (
-      firmowStr.toLowerCase().trim() === 'tak' ||
-      this.findParamValue(parameters, 'Biuro nieruchomości') ||
-      otodomOwnerTypeStr.toLowerCase().includes('biuro') ||
-      otodomOwnerTypeStr.toLowerCase().includes('firmowy') ||
-      otodomOwnerTypeStr.toLowerCase().includes('deweloper') ||
-      otodomOwnerTypeStr.toLowerCase().includes('agencja')
+      firmowString.toLowerCase().trim() === "tak" ||
+      (this.findParamValue(parameters, "Biuro nieruchomości") !== undefined &&
+        this.findParamValue(parameters, "Biuro nieruchomości") !== "") ||
+      otodomOwnerTypeString.toLowerCase().includes("biuro") ||
+      otodomOwnerTypeString.toLowerCase().includes("firmowy") ||
+      otodomOwnerTypeString.toLowerCase().includes("deweloper") ||
+      otodomOwnerTypeString.toLowerCase().includes("agencja")
     ) {
-      console.log('Owner type detected as COMPANY');
       return OwnerType.COMPANY;
     } else {
-      console.log('Owner type not detected');
       return null;
     }
   }
 
-  parseParkingType(parkingStr: string): ParkingType | null {
-    if (!parkingStr) {
-      console.log('Parking information not specified');
+  parseParkingType(parkingString: string): ParkingType | null {
+    if (parkingString === "") {
       return null;
     }
 
-    const parkingLower = parkingStr.toLowerCase();
+    const parkingLower = parkingString.toLowerCase();
 
     if (
-      parkingLower.includes('identyfikator do strefy płatnego parkowania') ||
-      parkingLower.includes('płatny parking')
+      parkingLower.includes("identyfikator do strefy płatnego parkowania") ||
+      parkingLower.includes("płatny parking")
     ) {
-      console.log('Paid parking zone detected');
       return ParkingType.IDENTIFICATOR_FOR_PAID_PARKING;
     } else if (
-      parkingLower.includes('w garażu') ||
-      parkingLower.includes('garage')
+      parkingLower.includes("w garażu") ||
+      parkingLower.includes("garage")
     ) {
-      console.log('Garage parking detected');
       return ParkingType.GARAGE;
     } else if (
-      parkingLower.includes('parking strzeżony') ||
-      parkingLower.includes('secured')
+      parkingLower.includes("parking strzeżony") ||
+      parkingLower.includes("secured")
     ) {
-      console.log('Secured parking detected');
       return ParkingType.SECURED;
     } else if (
-      parkingLower.includes('przynależne na ulicy') ||
-      parkingLower.includes('street')
+      parkingLower.includes("przynależne na ulicy") ||
+      parkingLower.includes("street")
     ) {
-      console.log('Street parking detected');
       return ParkingType.STREET;
     } else if (
-      parkingLower.includes('brak') ||
-      parkingLower.includes('none') ||
-      parkingLower.includes('nie')
+      parkingLower.includes("brak") ||
+      parkingLower.includes("none") ||
+      parkingLower.includes("nie")
     ) {
-      console.log('No parking detected');
       return ParkingType.NONE;
     } else {
-      console.log('Parking type not recognized:', parkingStr);
       return null;
     }
   }
 
-  parseRentAdditional(rentAdditionalStr: string): number | null {
-    if (!rentAdditionalStr) {
+  parseRentAdditional(rentAdditionalString: string): number | null {
+    if (rentAdditionalString === "") {
       return null;
     }
-    const rentMatch = rentAdditionalStr.match(/(\d+(?:[,.]\d+)?)/);
-    return rentMatch ? parseFloat(rentMatch[1].replace(',', '.')) : null;
+    const rentMatch = /(\d+(?:[,.]\d+)?)/.exec(rentAdditionalString);
+    return rentMatch === null
+      ? null
+      : Number.parseFloat(rentMatch[1].replace(",", "."));
   }
 
   parseOlxParameters(
     rawParameters: Record<string, string>,
   ): ParsedOfferParameters {
-    const footage = this.parseFootage(rawParameters['Powierzchnia'] || '');
-    const rooms = this.parseRooms(rawParameters['Liczba pokoi'] || '');
+    const footage = this.parseFootage(rawParameters.Powierzchnia || "");
+    const rooms = this.parseRooms(rawParameters["Liczba pokoi"] || "");
     const floor = this.parseFloor(
-      rawParameters['Poziom'] || rawParameters['Piętro'] || '',
+      rawParameters.Poziom || rawParameters["Piętro"] || "",
     );
 
     const furniture = this.parseBoolean(
-      this.findParamValue(rawParameters, 'Umeblowane') ||
-        this.findParamValue(rawParameters, 'umeblowane'),
-      'Furniture',
+      this.findParamValue(rawParameters, "Umeblowane") ??
+        this.findParamValue(rawParameters, "umeblowane"),
+      "Furniture",
     );
 
     const elevator = this.parseBoolean(
-      this.findParamValue(rawParameters, 'Winda') ||
-        this.findParamValue(rawParameters, 'winda'),
-      'Elevator',
+      this.findParamValue(rawParameters, "Winda") ??
+        this.findParamValue(rawParameters, "winda"),
+      "Elevator",
     );
 
-    const petsParam =
-      this.findParamValue(rawParameters, 'Zwierzęta') ||
-      this.findParamValue(rawParameters, 'Przyjazne zwierzętom');
-    const pets = this.parseBoolean(petsParam, 'Pets');
+    const petsParameter =
+      this.findParamValue(rawParameters, "Zwierzęta") ??
+      this.findParamValue(rawParameters, "Przyjazne zwierzętom");
+    const pets = this.parseBoolean(petsParameter, "Pets");
 
-    const buildingType = rawParameters['Rodzaj zabudowy']
-      ? this.parseBuildingType(rawParameters['Rodzaj zabudowy'])
+    const buildingType = rawParameters["Rodzaj zabudowy"]
+      ? this.parseBuildingType(rawParameters["Rodzaj zabudowy"])
       : BuildingType.APARTMENT;
 
     const ownerType = this.parseOwnerType(rawParameters);
-    const parkingType = this.parseParkingType(rawParameters['Parking'] || '');
+    const parkingType = this.parseParkingType(rawParameters.Parking || "");
     const rentAdditional = this.parseRentAdditional(
-      rawParameters['Czynsz (dodatkowo)'] ||
-        this.findParamValue(rawParameters, 'czynsz dodatkowy') ||
-        '',
+      rawParameters["Czynsz (dodatkowo)"] ||
+        (this.findParamValue(rawParameters, "czynsz dodatkowy") ?? ""),
     );
 
     return {
@@ -289,18 +273,19 @@ export class ParameterParserService {
     footageText: string | null,
     details: Record<string, string>,
   ): number | null {
-    if (footageText) {
-      return parseFloat(footageText.replace(/[^0-9,]/g, '').replace(',', '.'));
-    } else {
-      const footageDetail =
-        details['powierzchnia użytkowa'] ||
-        details['powierzchnia'] ||
-        details['surface'];
-      if (footageDetail) {
-        return parseFloat(
-          footageDetail.replace(/[^0-9,]/g, '').replace(',', '.'),
-        );
-      }
+    if (footageText !== null && footageText !== "") {
+      return Number.parseFloat(
+        footageText.replaceAll(/[^0-9,]/g, "").replace(",", "."),
+      );
+    }
+    const footageDetail =
+      details["powierzchnia użytkowa"] ||
+      details.powierzchnia ||
+      details.surface;
+    if (footageDetail) {
+      return Number.parseFloat(
+        footageDetail.replaceAll(/[^0-9,]/g, "").replace(",", "."),
+      );
     }
     return null;
   }

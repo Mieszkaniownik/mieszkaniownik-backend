@@ -1,16 +1,18 @@
+import { BuildingType, OwnerType, ParkingType } from "@prisma/client";
+
 import {
-  Injectable,
-  NotFoundException,
-  Logger,
   Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
   forwardRef,
-} from '@nestjs/common';
-import { OwnerType, BuildingType, ParkingType, Prisma } from '@prisma/client';
-import { DatabaseService } from '../database/database.service';
-import { AlertService } from '../alert/alert.service';
-import { NotificationService } from '../notification/notification.service';
-import { CreateMatchDto } from './dto/create-match.dto';
-import { QueryMatchesDto, MatchSortBy } from './dto/query-matches.dto';
+} from "@nestjs/common";
+
+import { AlertService } from "../alert/alert.service";
+import { DatabaseService } from "../database/database.service";
+import { NotificationService } from "../notification/notification.service";
+import { CreateMatchDto } from "./dto/create-match.dto";
+import { MatchSortBy, QueryMatchesDto } from "./dto/query-matches.dto";
 
 @Injectable()
 export class MatchService {
@@ -50,10 +52,10 @@ export class MatchService {
     } catch (error) {
       if (
         error instanceof Error &&
-        error.message.includes('Unique constraint')
+        error.message.includes("Unique constraint")
       ) {
         this.logger.warn(
-          `Match already exists for alert ${createMatchDto.alertId} and offer ${createMatchDto.offerId}`,
+          `Match already exists for alert ${String(createMatchDto.alertId)} and offer ${String(createMatchDto.offerId)}`,
         );
         return null;
       }
@@ -102,50 +104,57 @@ export class MatchService {
         },
       },
       orderBy: {
-        matchedAt: 'desc',
+        matchedAt: "desc",
       },
     });
   }
 
   async findAllByUser(userId: number, query?: QueryMatchesDto) {
-    const { sortBy, alertId, page = 1, limit = 50 } = query || {};
+    const { sortBy, alertId, page = 1, limit = 50 } = query ?? {};
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       alert: {
         userId,
       },
     };
 
-    if (alertId) {
+    if (alertId !== undefined && alertId !== 0) {
       where.alertId = alertId;
     }
 
-    let orderBy: any = { matchedAt: 'desc' };
+    let orderBy: Record<string, unknown> = { matchedAt: "desc" };
 
-    if (sortBy) {
+    if (sortBy !== undefined) {
       switch (sortBy) {
-        case MatchSortBy.NEWEST:
-          orderBy = { matchedAt: 'desc' };
+        case MatchSortBy.NEWEST: {
+          orderBy = { matchedAt: "desc" };
           break;
-        case MatchSortBy.OLDEST:
-          orderBy = { matchedAt: 'asc' };
+        }
+        case MatchSortBy.OLDEST: {
+          orderBy = { matchedAt: "asc" };
           break;
-        case MatchSortBy.PRICE_LOW:
-          orderBy = { offer: { price: 'asc' } };
+        }
+        case MatchSortBy.PRICE_LOW: {
+          orderBy = { offer: { price: "asc" } };
           break;
-        case MatchSortBy.PRICE_HIGH:
-          orderBy = { offer: { price: 'desc' } };
+        }
+        case MatchSortBy.PRICE_HIGH: {
+          orderBy = { offer: { price: "desc" } };
           break;
-        case MatchSortBy.FOOTAGE_LOW:
-          orderBy = { offer: { footage: 'asc' } };
+        }
+        case MatchSortBy.FOOTAGE_LOW: {
+          orderBy = { offer: { footage: "asc" } };
           break;
-        case MatchSortBy.FOOTAGE_HIGH:
-          orderBy = { offer: { footage: 'desc' } };
+        }
+        case MatchSortBy.FOOTAGE_HIGH: {
+          orderBy = { offer: { footage: "desc" } };
           break;
+        }
         case MatchSortBy.SCORE_HIGH:
-        case MatchSortBy.SCORE_LOW:
-          orderBy = { matchedAt: 'desc' };
+        case MatchSortBy.SCORE_LOW: {
+          orderBy = { matchedAt: "desc" };
           break;
+        }
       }
     }
 
@@ -236,8 +245,8 @@ export class MatchService {
       },
     });
 
-    if (!match) {
-      throw new NotFoundException(`Match with ID ${id} not found`);
+    if (match === null) {
+      throw new NotFoundException(`Match with ID ${String(id)} not found`);
     }
 
     return match;
@@ -253,14 +262,14 @@ export class MatchService {
   }
 
   async processNewOffer(offerId: number) {
-    this.logger.log(`Processing new offer ${offerId} for matching`);
+    this.logger.log(`Processing new offer ${String(offerId)} for matching`);
 
     const offer = await this.databaseService.offer.findUnique({
       where: { id: offerId },
     });
 
-    if (!offer) {
-      this.logger.error(`Offer ${offerId} not found`);
+    if (offer === null) {
+      this.logger.error(`Offer ${String(offerId)} not found`);
       return;
     }
 
@@ -286,25 +295,46 @@ export class MatchService {
         description?: string;
       } = {};
 
-      if (offer.ownerType) offerData.ownerType = offer.ownerType;
-      if (offer.buildingType) offerData.buildingType = offer.buildingType;
-      if (offer.parkingType) offerData.parkingType = offer.parkingType;
-      if (offer.city) offerData.city = offer.city;
-      if (offer.district) offerData.district = offer.district;
-      if (offer.price) offerData.price = Number(offer.price);
-      if (offer.footage) offerData.footage = Number(offer.footage);
-      if (offer.rooms !== null && offer.rooms !== undefined)
+      if (offer.ownerType) {
+        offerData.ownerType = offer.ownerType;
+      }
+      if (offer.buildingType) {
+        offerData.buildingType = offer.buildingType;
+      }
+      if (offer.parkingType) {
+        offerData.parkingType = offer.parkingType;
+      }
+      if (offer.city !== "") {
+        offerData.city = offer.city;
+      }
+      if (offer.district !== null && offer.district !== "") {
+        offerData.district = offer.district;
+      }
+      offerData.price = Number(offer.price);
+      if (offer.footage !== null) {
+        offerData.footage = Number(offer.footage);
+      }
+      if (offer.rooms !== null) {
         offerData.rooms = offer.rooms;
-      if (offer.floor !== null && offer.floor !== undefined)
+      }
+      if (offer.floor !== null) {
         offerData.floor = offer.floor;
-      if (offer.furniture !== null && offer.furniture !== undefined)
+      }
+      if (offer.furniture !== null) {
         offerData.furniture = offer.furniture;
-      if (offer.elevator !== null && offer.elevator !== undefined)
+      }
+      if (offer.elevator !== null) {
         offerData.elevator = offer.elevator;
-      if (offer.pets !== null && offer.pets !== undefined)
+      }
+      if (offer.pets !== null) {
         offerData.pets = offer.pets;
-      if (offer.title) offerData.title = offer.title;
-      if (offer.description) offerData.description = offer.description;
+      }
+      if (offer.title !== "") {
+        offerData.title = offer.title;
+      }
+      if (offer.description !== null && offer.description !== "") {
+        offerData.description = offer.description;
+      }
 
       const alertData: {
         city?: string;
@@ -326,40 +356,66 @@ export class MatchService {
         keywords?: string[];
       } = {};
 
-      if (alert.ownerType) alertData.ownerType = alert.ownerType;
-      if (alert.buildingType) alertData.buildingType = alert.buildingType;
-      if (alert.parkingType) alertData.parkingType = alert.parkingType;
-      if (alert.city && alert.city.trim() !== '') alertData.city = alert.city;
-      if (alert.district && alert.district.trim() !== '')
+      if (alert.ownerType !== null) {
+        alertData.ownerType = alert.ownerType;
+      }
+      if (alert.buildingType !== null) {
+        alertData.buildingType = alert.buildingType;
+      }
+      if (alert.parkingType !== null) {
+        alertData.parkingType = alert.parkingType;
+      }
+      if (alert.city.trim() !== "") {
+        alertData.city = alert.city;
+      }
+      if (alert.district !== null && alert.district.trim() !== "") {
         alertData.district = alert.district;
-      if (alert.minPrice) alertData.minPrice = Number(alert.minPrice);
-      if (alert.maxPrice) alertData.maxPrice = Number(alert.maxPrice);
-      if (alert.minFootage) alertData.minFootage = Number(alert.minFootage);
-      if (alert.maxFootage) alertData.maxFootage = Number(alert.maxFootage);
-      if (alert.minRooms !== null && alert.minRooms !== undefined)
+      }
+      if (alert.minPrice !== null) {
+        alertData.minPrice = Number(alert.minPrice);
+      }
+      if (alert.maxPrice !== null) {
+        alertData.maxPrice = Number(alert.maxPrice);
+      }
+      if (alert.minFootage !== null) {
+        alertData.minFootage = Number(alert.minFootage);
+      }
+      if (alert.maxFootage !== null) {
+        alertData.maxFootage = Number(alert.maxFootage);
+      }
+      if (alert.minRooms !== null) {
         alertData.minRooms = alert.minRooms;
-      if (alert.maxRooms !== null && alert.maxRooms !== undefined)
+      }
+      if (alert.maxRooms !== null) {
         alertData.maxRooms = alert.maxRooms;
-      if (alert.minFloor !== null && alert.minFloor !== undefined)
+      }
+      if (alert.minFloor !== null) {
         alertData.minFloor = alert.minFloor;
-      if (alert.maxFloor !== null && alert.maxFloor !== undefined)
+      }
+      if (alert.maxFloor !== null) {
         alertData.maxFloor = alert.maxFloor;
-      if (alert.furniture !== null && alert.furniture !== undefined)
+      }
+      if (alert.furniture !== null) {
         alertData.furniture = alert.furniture;
-      if (alert.elevator !== null && alert.elevator !== undefined)
+      }
+      if (alert.elevator !== null) {
         alertData.elevator = alert.elevator;
-      if (alert.pets !== null && alert.pets !== undefined)
+      }
+      if (alert.pets !== null) {
         alertData.pets = alert.pets;
-      if (alert.keywords) alertData.keywords = alert.keywords;
+      }
+      if (alert.keywords.length > 0) {
+        alertData.keywords = alert.keywords;
+      }
 
       this.logger.log(
-        `Checking match for alert ${alert.id} (${alert.name}) against offer ${offer.id} (${offer.title})`,
+        `Checking match for alert ${String(alert.id)} (${alert.name}) against offer ${String(offer.id)} (${offer.title})`,
       );
       this.logger.log(`Alert criteria: ${JSON.stringify(alertData)}`);
       this.logger.log(`Offer data: ${JSON.stringify(offerData)}`);
 
       const isMatch = this.alertService.checkOfferMatch(offerData, alertData);
-      this.logger.log(`Match result: ${isMatch}`);
+      this.logger.log(`Match result: ${String(isMatch)}`);
 
       if (isMatch) {
         try {
@@ -369,32 +425,36 @@ export class MatchService {
             notificationSent: false,
           });
 
-          if (match) {
+          if (match !== null) {
             matchCount++;
             this.logger.log(
-              `Created match between alert ${alert.id} and offer ${offer.id}`,
+              `Created match between alert ${String(alert.id)} and offer ${String(offer.id)}`,
             );
 
             try {
               await this.notificationService.notifyMatch(match.id);
-              this.logger.log(`Notification queued for match ${match.id}`);
+              this.logger.log(
+                `Notification queued for match ${String(match.id)}`,
+              );
             } catch (notificationError) {
               this.logger.error(
-                `Failed to queue notification for match ${match.id}:`,
+                `Failed to queue notification for match ${String(match.id)}:`,
                 notificationError,
               );
             }
           }
         } catch (error) {
           this.logger.error(
-            `Failed to create match for alert ${alert.id} and offer ${offer.id}:`,
+            `Failed to create match for alert ${String(alert.id)} and offer ${String(offer.id)}:`,
             error,
           );
         }
       }
     }
 
-    this.logger.log(`Created ${matchCount} matches for offer ${offerId}`);
+    this.logger.log(
+      `Created ${String(matchCount)} matches for offer ${String(offerId)}`,
+    );
     return matchCount;
   }
 
@@ -403,7 +463,7 @@ export class MatchService {
       const [stats, totalMatches, unreadMatches] = await Promise.all([
         this.databaseService.match
           .groupBy({
-            by: ['alertId'],
+            by: ["alertId"],
             where: {
               alert: {
                 userId,
@@ -437,7 +497,7 @@ export class MatchService {
         matchesByAlert: stats,
       };
     } catch (error) {
-      this.logger.error('Error getting match stats:', error);
+      this.logger.error("Error getting match stats:", error);
       return {
         totalMatches: 0,
         unreadMatches: 0,
@@ -447,21 +507,17 @@ export class MatchService {
   }
 
   async remove(id: number, userId: number) {
-    const match = await this.findOne(id, userId);
-
-    if (!match) {
-      throw new NotFoundException(`Match with ID ${id} not found`);
-    }
+    await this.findOne(id, userId);
 
     await this.databaseService.match.delete({
       where: { id },
     });
 
-    this.logger.log(`Match ${id} deleted by user ${userId}`);
+    this.logger.log(`Match ${String(id)} deleted by user ${String(userId)}`);
 
     return {
       success: true,
-      message: `Match ${id} has been deleted`,
+      message: `Match ${String(id)} has been deleted`,
     };
   }
 }

@@ -1,9 +1,10 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { MatchController } from './match.controller';
-import { MatchService } from './match.service';
-import { DatabaseModule } from '../database/database.module';
-import { AlertModule } from '../alert/alert.module';
-import { NotificationModule } from '../notification/notification.module';
+import { Module, forwardRef } from "@nestjs/common";
+
+import { AlertModule } from "../alert/alert.module";
+import { DatabaseModule } from "../database/database.module";
+import { NotificationModule } from "../notification/notification.module";
+import { MatchController } from "./match.controller";
+import { MatchService } from "./match.service";
 
 @Module({
   imports: [DatabaseModule, AlertModule, forwardRef(() => NotificationModule)],

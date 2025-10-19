@@ -1,12 +1,14 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger, OnModuleInit } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { OlxScraperService } from '../services/olx-scraper.service';
-import { BrowserSetupService } from '../services/browser-setup.service';
+import { Job } from "bullmq";
 
-@Processor('olx-new', {
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger, OnModuleInit } from "@nestjs/common";
+
+import { BrowserSetupService } from "../services/browser-setup.service";
+import { OlxScraperService } from "../services/olx-scraper.service";
+
+@Processor("olx-new", {
   concurrency: 3,
-  lockDuration: 120000,
+  lockDuration: 120_000,
 })
 export class OlxNewProcessor extends WorkerHost implements OnModuleInit {
   private readonly logger = new Logger(OlxNewProcessor.name);
@@ -19,12 +21,12 @@ export class OlxNewProcessor extends WorkerHost implements OnModuleInit {
   }
 
   onModuleInit() {
-    this.logger.log('OlxNewProcessor initialized and ready to process jobs!');
+    this.logger.log("OlxNewProcessor initialized and ready to process jobs!");
   }
 
   async process(job: Job<{ url: string; isNew?: boolean }>): Promise<void> {
     this.logger.log(
-      `Processing NEW OLX offer: ${job.data.url} (Job ID: ${job.id})`,
+      `Processing NEW OLX offer: ${job.data.url} (Job ID: ${job.id ?? "unknown"})`,
     );
 
     try {

@@ -1,18 +1,19 @@
-import { IsOptional, IsEnum, IsString, IsInt, Min } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { AlertStatus } from '@prisma/client';
+import { AlertStatus } from "@prisma/client";
+import { Type } from "class-transformer";
+import { IsEnum, IsInt, IsOptional, IsString, Min } from "class-validator";
+
+import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export enum AlertSortBy {
-  NEWEST = 'newest',
-  OLDEST = 'oldest',
-  MATCHES = 'matches',
-  NAME = 'name',
+  NEWEST = "newest",
+  OLDEST = "oldest",
+  MATCHES = "matches",
+  NAME = "name",
 }
 
 export class QueryAlertsDto {
   @ApiPropertyOptional({
-    description: 'Filter by alert status',
+    description: "Filter by alert status",
     enum: AlertStatus,
   })
   @IsOptional()
@@ -20,7 +21,7 @@ export class QueryAlertsDto {
   status?: AlertStatus;
 
   @ApiPropertyOptional({
-    description: 'Sort alerts by field',
+    description: "Sort alerts by field",
     enum: AlertSortBy,
     default: AlertSortBy.NEWEST,
   })
@@ -29,7 +30,7 @@ export class QueryAlertsDto {
   sortBy?: AlertSortBy = AlertSortBy.NEWEST;
 
   @ApiPropertyOptional({
-    description: 'Filter by city',
+    description: "Filter by city",
     type: String,
   })
   @IsOptional()
@@ -37,7 +38,7 @@ export class QueryAlertsDto {
   city?: string;
 
   @ApiPropertyOptional({
-    description: 'Search by alert name',
+    description: "Search by alert name",
     type: String,
   })
   @IsOptional()
@@ -45,7 +46,7 @@ export class QueryAlertsDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'Number of items to return',
+    description: "Number of items to return",
     type: Number,
   })
   @IsOptional()

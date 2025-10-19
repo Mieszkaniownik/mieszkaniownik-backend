@@ -1,0 +1,15 @@
+# Helm templates contain Go template syntax that Prettier cannot parse
+devops/templates/
+
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Prisma
+prisma/migrations/

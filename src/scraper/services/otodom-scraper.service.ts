@@ -1,9 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as puppeteer from 'puppeteer';
-import { BaseScraperService } from './base-scraper.service';
-import { ParameterParserService } from './parameter-parser.service';
-import { ScraperOfferMapperService } from './scraper-offer-mapper.service';
-import { ScraperProcessor } from '../scraper.processor';
+import * as puppeteer from "puppeteer";
+
+import { Injectable, Logger } from "@nestjs/common";
+
+import { ScraperProcessor } from "../scraper.processor";
+import { BaseScraperService } from "./base-scraper.service";
+import { ParameterParserService } from "./parameter-parser.service";
+import { ScraperOfferMapperService } from "./scraper-offer-mapper.service";
 
 @Injectable()
 export class OtodomScraperService {
@@ -11,7 +13,7 @@ export class OtodomScraperService {
 
   constructor(
     private readonly baseService: BaseScraperService,
-    private readonly paramParser: ParameterParserService,
+    private readonly parameterParser: ParameterParserService,
     private readonly mapperService: ScraperOfferMapperService,
     private readonly scraperProcessor: ScraperProcessor,
   ) {}
@@ -22,7 +24,7 @@ export class OtodomScraperService {
     isNew: boolean,
   ): Promise<void> {
     this.logger.log(
-      `Otodom Service processing offer: ${url} (isNew: ${isNew})`,
+      `Otodom Service processing offer: ${url} (isNew: ${String(isNew)})`,
     );
 
     await this.scraperProcessor.processOtodomOffer(page, url, isNew);

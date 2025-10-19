@@ -1,7 +1,8 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from "@nestjs/common";
+import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+
+import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,21 +12,22 @@ async function bootstrap() {
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: false,
+      forbidUnknownValues: true,
     }),
   );
 
   app.enableCors({
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Cache-Control',
-      'Accept',
-      'Accept-Encoding',
-      'Accept-Language',
-      'Connection',
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "Accept",
+      "Accept-Encoding",
+      "Accept-Language",
+      "Connection",
     ],
-    exposedHeaders: ['Cache-Control', 'Connection', 'Content-Type'],
+    exposedHeaders: ["Cache-Control", "Connection", "Content-Type"],
     origin: (
       origin: string | undefined,
       callback: (error: Error | null, allow?: boolean) => void,
@@ -39,8 +41,8 @@ async function bootstrap() {
       const ipPattern =
         /^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:(50\d{2}|5[1-5]\d{2})$/;
       const allowedDomains = [
-        'http://mieszkaniownik-dev.local',
-        'http://mieszkaniownik-prod.local',
+        "http://mieszkaniownik-dev.local",
+        "http://mieszkaniownik-prod.local",
       ];
 
       if (
@@ -52,14 +54,14 @@ async function bootstrap() {
         return;
       }
 
-      callback(new Error('Not allowed by CORS'), false);
+      callback(new Error("Not allowed by CORS"), false);
     },
     preflightContinue: false,
     credentials: true,
   });
 
   const config = new DocumentBuilder()
-    .setTitle('API Mieszkaniownik')
+    .setTitle("API Mieszkaniownik")
     .setDescription(
       `Mieszkaniownik to rozwiązanie skierowane dla studentów poszukujących mieszkania lub pokoju na wynajem. 
       Przy obecnej rotacji ofert wynajmu np. na OLX każda sekunda jest na wagę złota. 
@@ -67,16 +69,16 @@ async function bootstrap() {
       wpisać jakie mieszkanie nas interesuje i jaki mamy budżet. 
       Następnie od razu po pokazaniu się oferty dostajesz powiadomienie na maila lub discorda ze wszystkimi najważniejszymi informacjami.`,
     )
-    .setVersion('1.0')
-    .addTag('api')
+    .setVersion("1.0")
+    .addTag("api")
     .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'access-token',
+      { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+      "access-token",
     )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup("api", app, document);
 
   await app.listen(process.env.PORT ?? 5001);
 }

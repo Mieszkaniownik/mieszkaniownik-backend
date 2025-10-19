@@ -1,31 +1,33 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { AnalyzerService } from '../analyzer';
+import { Injectable, Logger } from "@nestjs/common";
+
+import { AnalyseService } from "../analyse/analyse.service";
+import type { AnalyseQueryDto } from "../analyse/dto/analyse-query.dto";
 import type {
   HeatmapData,
   HeatmapPoint,
   HeatmapQuery,
-} from './dto/heatmap.interface';
+} from "./dto/heatmap.interface";
 
 @Injectable()
 export class HeatmapService {
   private readonly logger = new Logger(HeatmapService.name);
 
-  constructor(private readonly analyzerService: AnalyzerService) {}
+  constructor(private readonly analyseService: AnalyseService) {}
 
   async generateHeatmapData(
     query: HeatmapQuery = {},
     userId?: number,
   ): Promise<HeatmapData> {
-    this.logger.log('Generating heatmap data with query:', query);
-    this.logger.log(`Applied limit: ${Number(query.limit) || 5000}`);
+    this.logger.log("Generating heatmap data with query:", query);
+    this.logger.log(`Applied limit: ${String(Number(query.limit) || 5000)}`);
 
-    const analyzedData = await this.analyzerService.analyzeOffers(
-      query as any,
+    const analyzedData = await this.analyseService.analyseOffers(
+      query as unknown as AnalyseQueryDto,
       userId,
     );
 
     this.logger.log(
-      `Analyzer returned ${analyzedData.offers.length} offers for heatmap`,
+      `Analyse returned ${String(analyzedData.offers.length)} offers for heatmap`,
     );
 
     if (analyzedData.offers.length === 0) {
@@ -53,16 +55,18 @@ export class HeatmapService {
       pricePerSqm: offer.pricePerSqm,
       offerDensity: offer.offerDensity,
       viewsPerDay: offer.viewsPerDay,
-      address:
-        offer.street && offer.streetNumber
-          ? `${offer.street} ${offer.streetNumber}`
-          : offer.district || offer.city,
+      address: (() => {
+        if (offer.street !== undefined && offer.streetNumber !== undefined) {
+          return `${offer.street} ${offer.streetNumber}`;
+        }
+        return offer.district ?? offer.city;
+      })(),
       images: offer.images,
       link: offer.link,
     }));
 
     this.logger.log(
-      `Generated ${points.length} heatmap points from analyzed data`,
+      `Generated ${String(points.length)} heatmap points from analyzed data`,
     );
 
     return {
@@ -87,6 +91,6 @@ export class HeatmapService {
   }
 
   async getHeatmapStats(userId?: number) {
-    return this.analyzerService.getDataAvailabilityStats(userId);
+    return this.analyseService.getDataAvailabilityStats(userId);
   }
 }

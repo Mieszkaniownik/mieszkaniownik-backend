@@ -1,0 +1,24 @@
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+
+const execAsync = promisify(exec);
+
+async function globalSetup() {
+  console.log("\nCleaning up orphaned browser processes before tests...\n");
+
+  try {
+    await execAsync('pkill -9 -f "puppeteer_dev_chrome_profile" || true');
+    await execAsync(
+      'pkill -9 -f "chromium.*--no-sandbox.*--disable-setuid-sandbox" || true',
+    );
+    await execAsync('pkill -9 -f "chromium.*--headless" || true');
+
+    await execAsync("rm -rf /tmp/puppeteer_dev_chrome_profile-* || true");
+
+    console.log("Pre-test cleanup completed\n");
+  } catch (error) {
+    console.warn("Warning: Pre-test cleanup had issues:", error);
+  }
+}
+
+export default globalSetup;
