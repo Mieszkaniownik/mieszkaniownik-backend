@@ -1,5 +1,5 @@
-# Helm templates
-helm-chart-backend/
+# Helm templates contain Go template syntax that Prettier cannot parse
+devops/templates/
 
 # Build output
 dist/

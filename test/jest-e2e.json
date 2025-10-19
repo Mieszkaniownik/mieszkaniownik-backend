@@ -7,7 +7,5 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "globalSetup": "./jest-global-setup.ts",
-  "globalTeardown": "./jest-global-teardown.ts",
-  "forceExit": true,
-  "detectOpenHandles": true
+  "globalTeardown": "./jest-global-teardown.ts"
 }

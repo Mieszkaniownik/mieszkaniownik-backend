@@ -43,7 +43,6 @@ jobs:
       NODE_ENV: test
       FRONTEND_URL: http://localhost:3000
       EXPIRY_TIME_MS: 3600000
-      USE_SCRAPER_THREADS: false
 
     steps:
       - name: Checkout
@@ -59,23 +58,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Install Chromium dependencies for Puppeteer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libnss3 \
-            libatk-bridge2.0-0 \
-            libdrm2 \
-            libxkbcommon0 \
-            libgbm1 \
-            libasound2 \
-            libxrandr2 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxfixes3 \
-            libatspi2.0-0 \
-            libcups2
 
       - name: Check commit name
         if: github.event_name == 'pull_request'
@@ -102,7 +84,7 @@ jobs:
         if: always()
 
       - name: Seed database
-        run: npx prisma db seed
+        run: npm run seed
         if: always()
 
       - name: Create test database
@@ -119,8 +101,6 @@ jobs:
       - name: Run e2e tests
         run: npm run test:e2e
         if: always()
-        env:
-          JEST_FORCE_EXIT: true
 
       - name: Build
         run: npm run build

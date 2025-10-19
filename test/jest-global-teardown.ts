@@ -7,24 +7,19 @@ async function globalTeardown() {
   console.log("\nCleaning up browser processes after tests...\n");
 
   try {
-    const commands = [
-      'pkill -9 -f "puppeteer_dev_chrome_profile" 2>/dev/null || true',
-      'pkill -9 -f "chromium.*--no-sandbox.*--disable-setuid-sandbox" 2>/dev/null || true',
-      'pkill -9 -f "chromium.*--headless" 2>/dev/null || true',
-      "rm -rf /tmp/puppeteer_dev_chrome_profile-* 2>/dev/null || true",
-    ];
+    await execAsync('pkill -9 -f "puppeteer_dev_chrome_profile" || true');
+    await execAsync(
+      'pkill -9 -f "chromium.*--no-sandbox.*--disable-setuid-sandbox" || true',
+    );
+    await execAsync('pkill -9 -f "chromium.*--headless" || true');
 
-    for (const cmd of commands) {
-      try {
-        await execAsync(cmd);
-      } catch {}
-    }
+    await execAsync("rm -rf /tmp/puppeteer_dev_chrome_profile-* || true");
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     console.log("Post-test cleanup completed\n");
-  } catch {
-    console.log("Post-test cleanup skipped\n");
+  } catch (error) {
+    console.warn("Warning: Post-test cleanup had issues:", error);
   }
 }
 
