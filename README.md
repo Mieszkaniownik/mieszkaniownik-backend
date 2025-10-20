@@ -25,9 +25,13 @@
 <div align="center">
 
 [![NestJS](https://img.shields.io/badge/NestJS-11.x-E0234E?logo=nestjs)](https://nestjs.com/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://www.typescriptlang.org/) [![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js)](https://nodejs.org/) [![Prisma](https://img.shields.io/badge/Prisma-6.x-2D3748?logo=prisma)](https://www.prisma.io/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.x-4169E1?logo=postgresql)](https://www.postgresql.org/)
+
 [![Puppeteer](https://img.shields.io/badge/Puppeteer-24.x-40B5A4?logo=puppeteer)](https://pptr.dev/) [![BullMQ](https://img.shields.io/badge/BullMQ-5.x-DC382D?logo=bull)](https://docs.bullmq.io/) [![Redis](https://img.shields.io/badge/Redis-7.x-DC382D?logo=redis)](https://redis.io/) [![Cheerio](https://img.shields.io/badge/Cheerio-1.x-E88C1D)](https://cheerio.js.org/)
+
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-0.x-4285F4?logo=google)](https://ai.google.dev/) [![Google Maps](https://img.shields.io/badge/Google_Maps-3.x-4285F4?logo=googlemaps)](https://developers.google.com/maps) [![Discord.js](https://img.shields.io/badge/Discord.js-14.x-5865F2?logo=discord)](https://discord.js.org/) [![Nodemailer](https://img.shields.io/badge/Nodemailer-7.x-22B8E0)](https://nodemailer.com/)
+
 [![Docker](https://img.shields.io/badge/Docker_Compose-2.x-2496ED?logo=docker)](https://www.docker.com/) [![Kubernetes](https://img.shields.io/badge/Kubernetes-1.x-326CE5?logo=kubernetes)](https://kubernetes.io/) [![Helm](https://img.shields.io/badge/Helm-3.x-0F1689?logo=helm)](https://helm.sh/) [![Nginx](https://img.shields.io/badge/Nginx-1.x-009639?logo=nginx)](https://nginx.org/)
+
 [![Status](https://img.shields.io/badge/Status-Beta-orange)]() [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 </div>
