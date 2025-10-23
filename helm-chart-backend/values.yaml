@@ -26,6 +26,7 @@ backend:
   env:
     NODE_ENV: production
     PORT: "5001"
+    CORS_ORIGIN: "https://mieszkaniownik.wsparcie.dev,https://app.mieszkaniownik.wsparcie.dev"
 
   resources:
     requests:
@@ -177,12 +178,20 @@ config:
 
 ingress:
   enabled: false
-  className: "nginx"
+  className: "gce"
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "mieszkaniownik-ingress-ip"
+    networking.gke.io/managed-certificates: "mieszkaniownik-cert"
+    kubernetes.io/ingress.allow-http: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    nginx.ingress.kubernetes.io/cors-expose-headers: "Cache-Control,Connection,Content-Type"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: "backend-config"
   hosts:
     - host: api.mieszkaniownik.local
       paths:
@@ -239,3 +248,67 @@ networkPolicy:
           protocol: TCP
         - port: 6379
           protocol: TCP
+
+cronJobs:
+  fullSync:
+    enabled: true
+    schedule: "0 2 * * *"
+    command: ["node", "-e", "require('./dist/src/scraper/scraper.service').ScraperService.prototype.handleCron()"]
+    concurrencyPolicy: Forbid
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    suspend: false
+    backoffLimit: 3
+    restartPolicy: Never
+    activeDeadlineSeconds: 3600
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  
+  cleanup:
+    enabled: true
+    schedule: "0 4 * * 0"
+    command: ["npm", "run", "cleanup"]
+    suspend: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+backendConfig:
+  enabled: true
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+      includeQueryString: false
+    negativeCaching: true
+    negativeCachingPolicy:
+      - code: 404
+        ttl: 120
+      - code: 500
+        ttl: 0
+  iap:
+    enabled: false
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+    affinityCookieTtlSec: 3600
+  timeoutSec: 30
+  connectionDraining:
+    drainingTimeoutSec: 60
+  healthCheck:
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    type: HTTP
+    requestPath: /health
+    port: 5001

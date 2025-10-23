@@ -1,0 +1,185 @@
+name: OAuth Health Monitor
+
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: "0 9 * * *"
+
+jobs:
+    check-oauth-health:
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+
+        steps:
+            - name: Check OAuth Token Status
+              id: oauth_check
+              run: |
+                  # Check if OAuth credentials are configured in secrets
+                  if [[ -z "${{ secrets.EMAIL_OAUTH_CLIENT_ID }}" ]] || \
+                     [[ -z "${{ secrets.EMAIL_OAUTH_CLIENT_SECRET }}" ]] || \
+                     [[ -z "${{ secrets.EMAIL_OAUTH_REFRESH_TOKEN }}" ]]; then
+                    echo "OAuth credentials not configured in GitHub Secrets"
+                    echo "oauth_configured=false" >> $GITHUB_OUTPUT
+                    exit 0
+                  fi
+
+                  echo "OAuth credentials are configured"
+                  echo "oauth_configured=true" >> $GITHUB_OUTPUT
+
+            - name: Validate Refresh Token (Optional)
+              if: steps.oauth_check.outputs.oauth_configured == 'true'
+              run: |
+                  echo "Note: Automatic token validation requires a deployed instance"
+                  echo "To enable automatic validation:"
+                  echo "1. Deploy your application"
+                  echo "2. Update this workflow to call your health endpoint"
+                  echo "3. Example: curl https://your-app.com/health/email/oauth/status"
+
+            - name: Create Issue on Failure
+              if: failure()
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const title = 'OAuth Token Health Check Failed';
+                      const body = `
+                      ## OAuth Health Check Failed
+
+                      The automated OAuth health check has detected an issue.
+
+                      ### Possible Causes:
+                      - OAuth refresh token may have expired
+                      - Client credentials may be invalid
+                      - Gmail API may be disabled
+
+                      ### Action Required:
+                      1. Review the [Gmail OAuth Setup Guide](docs/GMAIL_OAUTH_SETUP.md)
+                      2. Check if the OAuth refresh token needs to be regenerated
+                      3. Verify Google Cloud Console settings
+                      4. Update GitHub Secrets with new credentials if needed
+
+                      ### GitHub Secrets to Check:
+                      - \`EMAIL_OAUTH_CLIENT_ID\`
+                      - \`EMAIL_OAUTH_CLIENT_SECRET\`
+                      - \`EMAIL_OAUTH_REFRESH_TOKEN\`
+                      - \`EMAIL_OAUTH_USER\`
+
+                      ### Next Steps:
+                      1. Generate new OAuth tokens following the guide
+                      2. Update the secrets in repository settings
+                      3. Re-run this workflow to verify
+
+                      ---
+                      *Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}*
+                      *Date: ${new Date().toISOString()}*
+                      `;
+
+                      // Check if issue already exists
+                      const issues = await github.rest.issues.listForRepo({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        state: 'open',
+                        labels: 'oauth,automated'
+                      });
+
+                      const existingIssue = issues.data.find(issue => 
+                        issue.title.includes('OAuth Token Health Check Failed')
+                      );
+
+                      if (!existingIssue) {
+                        await github.rest.issues.create({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          title: title,
+                          body: body,
+                          labels: ['oauth', 'automated', 'priority:high']
+                        });
+                      } else {
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: existingIssue.number,
+                          body: `Health check failed again on ${new Date().toISOString()}\n\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+                        });
+                      }
+
+            - name: Summary
+              if: always()
+              run: |
+                  echo "## OAuth Health Check Summary" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  if [[ "${{ steps.oauth_check.outputs.oauth_configured }}" == "true" ]]; then
+                    echo "OAuth credentials are configured in GitHub Secrets" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "OAuth credentials are not fully configured" >> $GITHUB_STEP_SUMMARY
+                    echo "" >> $GITHUB_STEP_SUMMARY
+                    echo "### Required Secrets:" >> $GITHUB_STEP_SUMMARY
+                    echo "- \`EMAIL_OAUTH_CLIENT_ID\`" >> $GITHUB_STEP_SUMMARY
+                    echo "- \`EMAIL_OAUTH_CLIENT_SECRET\`" >> $GITHUB_STEP_SUMMARY
+                    echo "- \`EMAIL_OAUTH_REFRESH_TOKEN\`" >> $GITHUB_STEP_SUMMARY
+                    echo "- \`EMAIL_OAUTH_USER\`" >> $GITHUB_STEP_SUMMARY
+                  fi
+
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "### Resources:" >> $GITHUB_STEP_SUMMARY
+                  echo "- [Gmail OAuth Setup Guide](docs/GMAIL_OAUTH_SETUP.md)" >> $GITHUB_STEP_SUMMARY
+                  echo "- [Google OAuth Playground](https://developers.google.com/oauthplayground/)" >> $GITHUB_STEP_SUMMARY
+
+    notify-expiring-soon:
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+
+        steps:
+            - name: Check Token Expiry (Requires Deployed App)
+              run: |
+                  echo "This job requires a deployed application instance"
+                  echo ""
+                  echo "To enable automatic expiry notifications:"
+                  echo "1. Set HEALTH_CHECK_URL secret to your deployed app URL"
+                  echo "2. Example: https://your-app.com"
+                  echo "3. Uncomment the token validation step below"
+
+            # Uncomment this section once you have a deployed instance
+            # - name: Validate Token Expiry
+            #   if: secrets.HEALTH_CHECK_URL != ''
+            #   id: check_expiry
+            #   run: |
+            #       RESPONSE=$(curl -s "${{ secrets.HEALTH_CHECK_URL }}/health/email/oauth/status" || echo '{}')
+            #       EXPIRES_IN=$(echo $RESPONSE | jq -r '.expiresInMinutes // "unknown"')
+            #
+            #       echo "expires_in=$EXPIRES_IN" >> $GITHUB_OUTPUT
+            #
+            #       if [[ "$EXPIRES_IN" =~ ^[0-9]+$ ]] && [[ $EXPIRES_IN -lt 1440 ]]; then
+            #         echo "Token expires in $EXPIRES_IN minutes (less than 24 hours)"
+            #         echo "needs_attention=true" >> $GITHUB_OUTPUT
+            #       else
+            #         echo "Token is valid"
+            #         echo "needs_attention=false" >> $GITHUB_OUTPUT
+            #       fi
+
+            # - name: Create Warning Issue
+            #   if: steps.check_expiry.outputs.needs_attention == 'true'
+            #   uses: actions/github-script@v7
+            #   with:
+            #       script: |
+            #           await github.rest.issues.create({
+            #             owner: context.repo.owner,
+            #             repo: context.repo.repo,
+            #             title: 'OAuth Token Expiring Soon',
+            #             body: `
+            #             ## OAuth Token Expiring Soon
+            #
+            #             The OAuth access token will expire in less than 24 hours.
+            #
+            #             **Note**: The refresh token should automatically generate new access tokens.
+            #             This is just a monitoring alert.
+            #
+            #             ### If automatic refresh is not working:
+            #             1. Check application logs for OAuth errors
+            #             2. Verify OAuthRefreshService is running
+            #             3. Check /health/email endpoint
+            #
+            #             See [Gmail OAuth Setup Guide](docs/GMAIL_OAUTH_SETUP.md) for details.
+            #             `,
+            #             labels: ['oauth', 'monitoring']
+            #           });

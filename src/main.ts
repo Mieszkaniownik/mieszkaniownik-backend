@@ -40,20 +40,37 @@ async function bootstrap() {
       const localhostPattern = /^https?:\/\/localhost:(50\d{2}|5[1-5]\d{2})$/;
       const ipPattern =
         /^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:(50\d{2}|5[1-5]\d{2})$/;
+      
+      const dockerPattern = /^https?:\/\/(frontend|mieszkaniownik-frontend)(:\d+)?$/;
+      
       const allowedDomains = [
         "http://mieszkaniownik-dev.local",
         "http://mieszkaniownik-prod.local",
+        "https://mieszkaniownik.wsparcie.dev",
+        "https://api.mieszkaniownik.wsparcie.dev",
+        "https://app.mieszkaniownik.wsparcie.dev",
       ];
+
+      const envOrigins = process.env.CORS_ORIGIN?.split(",").map(o => o.trim()) || [];
+      const allAllowedDomains = [...allowedDomains, ...envOrigins];
 
       if (
         localhostPattern.test(origin) ||
         ipPattern.test(origin) ||
-        allowedDomains.includes(origin)
+        dockerPattern.test(origin) ||
+        allAllowedDomains.includes(origin)
       ) {
         callback(null, true);
         return;
       }
 
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`[CORS] Allowing origin in development mode: ${origin}`);
+        callback(null, true);
+        return;
+      }
+
+      console.error(`[CORS] Origin not allowed: ${origin}`);
       callback(new Error("Not allowed by CORS"), false);
     },
     preflightContinue: false,

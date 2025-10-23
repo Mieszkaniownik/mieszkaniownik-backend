@@ -23,7 +23,8 @@ RUN apk add --no-cache \
     freetype \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    netcat-openbsd
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
@@ -37,8 +38,10 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 COPY --from=builder /app/dist ./dist
 
-RUN if [ -f entrypoint.sh ]; then cp entrypoint.sh ./entrypoint.sh && chmod +x entrypoint.sh; fi
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 5001
 
-CMD if [ -f entrypoint.sh ]; then ./entrypoint.sh; else npm run start:prod; fi
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npm", "run", "start:prod"]

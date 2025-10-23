@@ -1,0 +1,137 @@
+substitutions:
+  _PROJECT_ID: "your-gcp-project-id"
+  _REGION: "europe-west3"
+  _CLUSTER_NAME: "mieszkaniownik-cluster"
+  _ARTIFACT_REGISTRY: "europe-west3-docker.pkg.dev"
+  _REPOSITORY: "mieszkaniownik-repo"
+  _SERVICE_NAME: "mieszkaniownik-backend"
+  _IMAGE_TAG: "${SHORT_SHA}"
+  _HELM_RELEASE_NAME: "mieszkaniownik-backend"
+  _NAMESPACE: "production"
+
+options:
+  machineType: "E2_HIGHCPU_8"
+  logging: CLOUD_LOGGING_ONLY
+  dynamicSubstitutions: true
+
+steps:
+  - name: "node:20-alpine"
+    id: "install-and-test"
+    entrypoint: "sh"
+    args:
+      - "-c"
+      - |
+        npm ci
+        npm run typecheck
+        npm run format:check
+        npm run lint
+        npm run test
+    env:
+      - "NODE_ENV=test"
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-image"
+    args:
+      - "build"
+      - "-t"
+      - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}"
+      - "-t"
+      - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest"
+      - "-t"
+      - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${BRANCH_NAME}-latest"
+      - "--build-arg"
+      - "NODE_ENV=production"
+      - "--cache-from"
+      - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest"
+      - "."
+    waitFor: ["install-and-test"]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-image"
+    args:
+      - "push"
+      - "--all-tags"
+      - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}"
+    waitFor: ["build-image"]
+
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "scan-image"
+    args:
+      - "container"
+      - "images"
+      - "scan"
+      - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}"
+    waitFor: ["push-image"]
+
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "get-credentials"
+    args:
+      - "container"
+      - "clusters"
+      - "get-credentials"
+      - "${_CLUSTER_NAME}"
+      - "--region=${_REGION}"
+      - "--project=${_PROJECT_ID}"
+    waitFor: ["scan-image"]
+
+  - name: "gcr.io/$PROJECT_ID/helm"
+    id: "helm-deploy"
+    entrypoint: "sh"
+    args:
+      - "-c"
+      - |
+        helm upgrade --install ${_HELM_RELEASE_NAME} ./helm-chart-backend \
+          --namespace ${_NAMESPACE} \
+          --create-namespace \
+          --set backend.image.repository=${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME} \
+          --set backend.image.tag=${_IMAGE_TAG} \
+          --set global.imageRegistry="" \
+          --values ./helm-chart-backend/values-${BRANCH_NAME}.yaml \
+          --wait \
+          --timeout 10m \
+          --atomic \
+          --cleanup-on-fail
+    waitFor: ["get-credentials"]
+
+  - name: "gcr.io/cloud-builders/kubectl"
+    id: "verify-deployment"
+    args:
+      - "rollout"
+      - "status"
+      - "deployment/${_HELM_RELEASE_NAME}"
+      - "-n"
+      - "${_NAMESPACE}"
+      - "--timeout=5m"
+    waitFor: ["helm-deploy"]
+
+  - name: "gcr.io/cloud-builders/kubectl"
+    id: "smoke-test"
+    entrypoint: "sh"
+    args:
+      - "-c"
+      - |
+        SERVICE_IP=$(kubectl get svc ${_HELM_RELEASE_NAME} -n ${_NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        if [ -z "$SERVICE_IP" ]; then
+          SERVICE_IP=$(kubectl get svc ${_HELM_RELEASE_NAME} -n ${_NAMESPACE} -o jsonpath='{.spec.clusterIP}')
+        fi
+        kubectl run curl-test --image=curlimages/curl:latest --rm -i --restart=Never -- \
+          curl -f http://$SERVICE_IP:5001/health || exit 1
+    waitFor: ["verify-deployment"]
+
+images:
+  - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}"
+  - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest"
+  - "${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${BRANCH_NAME}-latest"
+
+artifacts:
+  objects:
+    location: "gs://${_PROJECT_ID}-build-artifacts"
+    paths:
+      - "helm-chart-backend/**"
+
+timeout: "1800s"
+
+tags:
+  - "mieszkaniownik-backend"
+  - "${BRANCH_NAME}"
+  - "${_IMAGE_TAG}"

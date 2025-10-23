@@ -1,0 +1,165 @@
+{{- if .Values.cronJobs.fullSync.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "mieszkaniownik-backend.fullname" . }}-full-sync
+  labels:
+    {{- include "mieszkaniownik-backend.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cronjob
+spec:
+  schedule: {{ .Values.cronJobs.fullSync.schedule | quote }}
+  concurrencyPolicy: {{ .Values.cronJobs.fullSync.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.cronJobs.fullSync.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronJobs.fullSync.failedJobsHistoryLimit }}
+  suspend: {{ .Values.cronJobs.fullSync.suspend }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "mieszkaniownik-backend.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: cronjob
+        job-type: full-sync
+    spec:
+      backoffLimit: {{ .Values.cronJobs.fullSync.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.cronJobs.fullSync.activeDeadlineSeconds }}
+      template:
+        metadata:
+          annotations:
+            checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+            checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+          labels:
+            {{- include "mieszkaniownik-backend.selectorLabels" . | nindent 12 }}
+            job-type: full-sync
+        spec:
+          restartPolicy: {{ .Values.cronJobs.fullSync.restartPolicy }}
+          {{- with .Values.global.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "mieszkaniownik-backend.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          initContainers:
+            {{- if .Values.postgresql.enabled }}
+            - name: wait-for-postgres
+              image: busybox:1.35
+              command: ['sh', '-c']
+              args:
+                - |
+                  until nc -z {{ .Release.Name }}-postgresql 5432; do
+                    echo "Waiting for PostgreSQL..."
+                    sleep 2
+                  done
+                  echo "PostgreSQL is ready!"
+            {{- end }}
+            {{- if .Values.redis.enabled }}
+            - name: wait-for-redis
+              image: busybox:1.35
+              command: ['sh', '-c']
+              args:
+                - |
+                  until nc -z {{ .Release.Name }}-redis-master 6379; do
+                    echo "Waiting for Redis..."
+                    sleep 2
+                  done
+                  echo "Redis is ready!"
+            {{- end }}
+          containers:
+            - name: full-sync
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.global.imageRegistry }}{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+              command: {{ .Values.cronJobs.fullSync.command }}
+              env:
+                - name: DATABASE_URL
+                  value: {{ include "mieszkaniownik-backend.databaseUrl" . | quote }}
+                - name: REDIS_URL
+                  value: {{ include "mieszkaniownik-backend.redisUrl" . | quote }}
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "mieszkaniownik-backend.postgresqlSecretName" . }}
+                      key: postgres-password
+                - name: NODE_ENV
+                  value: "production"
+                - name: SCRAPER_MODE
+                  value: "full"
+              envFrom:
+                - configMapRef:
+                    name: {{ include "mieszkaniownik-backend.configName" . }}
+                - secretRef:
+                    name: {{ include "mieszkaniownik-backend.appSecretName" . }}
+              resources:
+                {{- toYaml .Values.cronJobs.fullSync.resources | nindent 16 }}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+---
+{{- if .Values.cronJobs.cleanup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "mieszkaniownik-backend.fullname" . }}-cleanup
+  labels:
+    {{- include "mieszkaniownik-backend.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cronjob
+spec:
+  schedule: {{ .Values.cronJobs.cleanup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  suspend: {{ .Values.cronJobs.cleanup.suspend }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "mieszkaniownik-backend.selectorLabels" . | nindent 8 }}
+        job-type: cleanup
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            {{- include "mieszkaniownik-backend.selectorLabels" . | nindent 12 }}
+            job-type: cleanup
+        spec:
+          restartPolicy: Never
+          {{- with .Values.global.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "mieszkaniownik-backend.serviceAccountName" . }}
+          containers:
+            - name: cleanup
+              image: "{{ .Values.global.imageRegistry }}{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+              command: {{ .Values.cronJobs.cleanup.command }}
+              env:
+                - name: DATABASE_URL
+                  value: {{ include "mieszkaniownik-backend.databaseUrl" . | quote }}
+                - name: REDIS_URL
+                  value: {{ include "mieszkaniownik-backend.redisUrl" . | quote }}
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "mieszkaniownik-backend.postgresqlSecretName" . }}
+                      key: postgres-password
+              envFrom:
+                - configMapRef:
+                    name: {{ include "mieszkaniownik-backend.configName" . }}
+                - secretRef:
+                    name: {{ include "mieszkaniownik-backend.appSecretName" . }}
+              resources:
+                {{- toYaml .Values.cronJobs.cleanup.resources | nindent 16 }}
+{{- end }}

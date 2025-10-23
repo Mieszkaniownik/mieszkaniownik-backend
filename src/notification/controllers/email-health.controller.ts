@@ -2,11 +2,15 @@ import { Controller, Get } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { EmailService } from "../services/email.service";
+import { OAuthRefreshService } from "../services/oauth-refresh.service";
 
 @ApiTags("health")
 @Controller("health/email")
 export class EmailHealthController {
-  constructor(private readonly emailService: EmailService) {}
+  constructor(
+    private readonly emailService: EmailService,
+    private readonly oauthRefreshService: OAuthRefreshService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -19,6 +23,7 @@ export class EmailHealthController {
   async checkEmailHealth() {
     try {
       const isInitialized = await this.emailService.isTransporterReady();
+      const oauthStatus = await this.oauthRefreshService.getTokenStatus();
 
       return {
         status: isInitialized ? "healthy" : "unhealthy",
@@ -27,6 +32,12 @@ export class EmailHealthController {
         details: {
           transporterReady: isInitialized,
           configuration: this.getEmailConfigStatus(),
+          oauth: {
+            configured: oauthStatus.configured,
+            hasValidToken: oauthStatus.hasValidToken,
+            expiresAt: oauthStatus.expiresAt,
+            expiresInMinutes: oauthStatus.expiresInMinutes,
+          },
         },
       };
     } catch (error) {
@@ -37,6 +48,22 @@ export class EmailHealthController {
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
+  }
+
+  @Get("oauth/status")
+  @ApiOperation({
+    summary: "Check OAuth token status",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "OAuth token status retrieved",
+  })
+  async getOAuthStatus() {
+    const status = await this.oauthRefreshService.getTokenStatus();
+    return {
+      ...status,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   private getEmailConfigStatus() {

@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "oauth2:diagnose": "node diagnose-oauth2.js",
+    "oauth2:guide": "node oauth-playground-guide.js",
     "oauth2:tokens": "node get-oauth2-tokens.js",
     "oauth2:tokens:web": "node get-oauth2-tokens.js $1 $2 --web",
     "predev": "npm run cleanup:silent",

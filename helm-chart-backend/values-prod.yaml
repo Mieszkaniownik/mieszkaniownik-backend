@@ -14,6 +14,7 @@ backend:
     NODE_ENV: production
     LOG_LEVEL: "warn"
     ENABLE_SWAGGER: "false"
+    CORS_ORIGIN: "https://mieszkaniownik.wsparcie.dev,https://app.mieszkaniownik.wsparcie.dev"
 
   resources:
     requests:
@@ -90,20 +91,26 @@ config:
 
 ingress:
   enabled: true
+  className: "gce"
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/rate-limit: "200"
-    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "mieszkaniownik-ingress-ip"
+    networking.gke.io/managed-certificates: "mieszkaniownik-backend-cert"
+    kubernetes.io/ingress.allow-http: "true"
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: "mieszkaniownik-backend-backend-config"
   hosts:
-    - host: api.mieszkaniownik.com
+    - host: mieszkaniownik.wsparcie.dev
       paths:
         - path: /
           pathType: Prefix
           service: backend
-  tls:
-    - secretName: mieszkaniownik-backend-prod-tls
-      hosts:
-        - api.mieszkaniownik.com
+    - host: api.mieszkaniownik.wsparcie.dev
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend
+  tls: []
 
 autoscaling:
   enabled: true
@@ -128,3 +135,34 @@ securityContext:
 
 networkPolicy:
   enabled: true
+
+cronJobs:
+  fullSync:
+    enabled: true
+    schedule: "0 2 * * *"
+    suspend: false
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 4000m
+        memory: 4Gi
+  
+  cleanup:
+    enabled: true
+    schedule: "0 4 * * 0"
+    suspend: false
+
+backendConfig:
+  enabled: true
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+      includeQueryString: false
+    negativeCaching: true
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+    affinityCookieTtlSec: 3600
