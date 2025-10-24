@@ -40,9 +40,10 @@ async function bootstrap() {
       const localhostPattern = /^https?:\/\/localhost:(50\d{2}|5[1-5]\d{2})$/;
       const ipPattern =
         /^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:(50\d{2}|5[1-5]\d{2})$/;
-      
-      const dockerPattern = /^https?:\/\/(frontend|mieszkaniownik-frontend)(:\d+)?$/;
-      
+
+      const dockerPattern =
+        /^https?:\/\/(frontend|mieszkaniownik-frontend)(:\d+)?$/;
+
       const allowedDomains = [
         "http://mieszkaniownik-dev.local",
         "http://mieszkaniownik-prod.local",
@@ -51,7 +52,8 @@ async function bootstrap() {
         "https://app.mieszkaniownik.wsparcie.dev",
       ];
 
-      const envOrigins = process.env.CORS_ORIGIN?.split(",").map(o => o.trim()) || [];
+      const envOrigins =
+        process.env.CORS_ORIGIN?.split(",").map((o) => o.trim()) ?? [];
       const allAllowedDomains = [...allowedDomains, ...envOrigins];
 
       if (
