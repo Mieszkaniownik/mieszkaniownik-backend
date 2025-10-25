@@ -110,7 +110,6 @@ export class AnalyseService {
       where: {
         ...whereClause,
         available: true,
-        views: { gt: 0 },
         latitude: { not: null },
         longitude: { not: null },
       },

@@ -1,65 +1,11 @@
-# Compiled output
-/dist
-/node_modules
-/build
+# .gitignore additions for backend deployment files
 
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-
-# OS
-.DS_Store
-
-# Tests
-/coverage
-/.nyc_output
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# dotenv environment variable files
+# Environment files with secrets (keep templates only)
 .env
-.env.development.local
-.env.test.local
-.env.production.local
 .env.local
 .env.*.local
 .env.secret
 
-# temp directory
-.temp
-.tmp
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-/generated/prisma
-
-# Deployment and Infrastructure
 # Terraform
 terraform/.terraform/
 terraform/.terraform.lock.hcl
@@ -75,6 +21,12 @@ terraform/.terraform.tfstate.lock.info
 terraform/tfplan
 
 # GCP credentials
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!nest-cli.json
+!.vscode/*.json
 gcp-credentials/
 service-account-key.json
 google-credentials.json
@@ -94,6 +46,10 @@ helm-chart-backend/Chart.lock
 prisma/*.db
 prisma/*.db-journal
 
+# Scripts logs
+scripts/*.log
+*.log
+
 # Docker
 docker-compose.override.yml
 .dockerignore.local
@@ -105,8 +61,13 @@ cloudbuild-local.yaml
 # Monitoring & Observability
 grafana-data/
 prometheus-data/
+logs/
 
 # Backups
 backups/
 *.sql.gz
 *.dump
+
+# Local development
+.vscode/settings.json.local
+.idea/

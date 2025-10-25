@@ -1,27 +1,10 @@
 import type { Queue } from "bullmq";
-import path from "node:path";
-import { Worker } from "node:worker_threads";
 
 import { InjectQueue } from "@nestjs/bullmq";
 import { Injectable, Logger } from "@nestjs/common";
 
 import { BrowserSetupService } from "./browser-setup.service";
 import { OtodomAuthService } from "./otodom-auth.service";
-
-interface ExtractorWorkerData {
-  pageNum: number;
-  html: string;
-  isNewOffersOnly?: boolean;
-}
-
-interface WorkerResult {
-  success: boolean;
-  offers: string[];
-  hasNextPage: boolean;
-  error?: string;
-  pageNum: number;
-  source: "olx" | "otodom";
-}
 
 export enum SortOrder {
   NEWEST = "created_at:desc",
@@ -89,31 +72,46 @@ export class ScraperThreadManagerService {
 
         this.logger.log(`OLX: Fetching page ${String(pageNumber)}`);
 
-        const html = await this.browserSetup.scrapeWithBrowser<string>(
-          url,
-          false,
-          async (page) => {
-            await page
-              .waitForSelector('[data-cy="listing-grid"]', { timeout: 10_000 })
-              .catch(() => {
-                this.logger.warn(
-                  `OLX page ${String(pageNumber)}: listing-grid not found`,
-                );
-              });
-            return await page.content();
-          },
-        );
+        const result = await this.browserSetup.scrapeWithBrowser<{
+          offers: string[];
+          hasNextPage: boolean;
+        }>(url, false, async (page) => {
+          await page
+            .waitForSelector('[data-cy="listing-grid"]', { timeout: 10_000 })
+            .catch(() => {
+              this.logger.warn(
+                `OLX page ${String(pageNumber)}: listing-grid not found`,
+              );
+            });
 
-        const result = await this.extractOffersWithWorker(
-          {
-            pageNum: pageNumber,
-            html,
-            isNewOffersOnly,
-          },
-          "olx",
-        );
+          // Extract offers directly in browser context
+          const offers = await page.evaluate(() => {
+            const links = [
+              ...document.querySelectorAll('a[href*="/d/oferta/"]'),
+            ];
+            const uniqueUrls = new Set<string>();
+            for (const a of links) {
+              const href = (a as HTMLAnchorElement).href;
+              if (href.includes("olx.pl/d/oferta/")) {
+                uniqueUrls.add(href);
+              }
+            }
+            return [...uniqueUrls];
+          });
 
-        if (result.success && result.offers.length > 0) {
+          // Check for next page
+          const hasNextPage = await page.evaluate(() => {
+            return (
+              document.querySelector('[data-testid="pagination-forward"]') !==
+                null ||
+              document.querySelector('[aria-label="następna strona"]') !== null
+            );
+          });
+
+          return { offers, hasNextPage };
+        });
+
+        if (result.offers.length > 0) {
           this.logger.log(
             `OLX ${workerType} page ${String(pageNumber)} found ${String(result.offers.length)} offers`,
           );
@@ -162,69 +160,6 @@ export class ScraperThreadManagerService {
     );
   }
 
-  private async extractOffersWithWorker(
-    data: ExtractorWorkerData,
-    source: "olx" | "otodom",
-  ): Promise<WorkerResult> {
-    return new Promise((resolve) => {
-      const workerPath = path.join(
-        process.cwd(),
-        "dist",
-        "src",
-        "scraper",
-        "workers",
-        `${source}-extractor.worker.js`,
-      );
-
-      const worker = new Worker(workerPath, { workerData: data });
-
-      const timeout = setTimeout(() => {
-        this.logger.warn(
-          `${source.toUpperCase()} extractor worker timeout on page ${String(data.pageNum)}, terminating...`,
-        );
-        void worker.terminate();
-        resolve({
-          success: false,
-          offers: [],
-          hasNextPage: false,
-          pageNum: data.pageNum,
-          source,
-          error: "Worker timeout",
-        });
-      }, 10_000);
-
-      worker.on("message", (result: WorkerResult) => {
-        clearTimeout(timeout);
-        resolve(result);
-      });
-
-      worker.on("error", (error) => {
-        clearTimeout(timeout);
-        this.logger.error(
-          `${source.toUpperCase()} extractor worker error:`,
-          error,
-        );
-        resolve({
-          success: false,
-          offers: [],
-          hasNextPage: false,
-          pageNum: data.pageNum,
-          source,
-          error: error.message,
-        });
-      });
-
-      worker.on("exit", (code) => {
-        clearTimeout(timeout);
-        if (code !== 0) {
-          this.logger.error(
-            `${source.toUpperCase()} extractor worker exited with code ${String(code)}`,
-          );
-        }
-      });
-    });
-  }
-
   private async runEnhancedOtodomWorker(
     isNewOffersOnly: boolean,
   ): Promise<void> {
@@ -243,33 +178,50 @@ export class ScraperThreadManagerService {
 
         this.logger.log(`Otodom: Fetching page ${String(pageNumber)}`);
 
-        const html = await this.browserSetup.scrapeWithBrowser<string>(
-          url,
-          true,
-          async (page) => {
-            await page
-              .waitForSelector('[data-cy="search.listing"]', {
-                timeout: 15_000,
-              })
-              .catch(() => {
-                this.logger.warn(
-                  `Otodom page ${String(pageNumber)}: search.listing not found`,
-                );
-              });
-            return await page.content();
-          },
-        );
+        const result = await this.browserSetup.scrapeWithBrowser<{
+          offers: string[];
+          hasNextPage: boolean;
+        }>(url, true, async (page) => {
+          await page
+            .waitForSelector('[data-cy="search.listing"]', {
+              timeout: 15_000,
+            })
+            .catch(() => {
+              this.logger.warn(
+                `Otodom page ${String(pageNumber)}: search.listing not found`,
+              );
+            });
 
-        const result = await this.extractOffersWithWorker(
-          {
-            pageNum: pageNumber,
-            html,
-            isNewOffersOnly,
-          },
-          "otodom",
-        );
+          // Extract offers directly in browser context
+          const offers = await page.evaluate(() => {
+            const links = [
+              ...document.querySelectorAll('a[href*="/pl/oferta/"]'),
+            ];
+            const uniqueUrls = new Set<string>();
+            for (const a of links) {
+              const href = (a as HTMLAnchorElement).href;
+              if (href.includes("otodom.pl/pl/oferta/")) {
+                uniqueUrls.add(href);
+              }
+            }
+            return [...uniqueUrls];
+          });
 
-        if (result.success && result.offers.length > 0) {
+          // Check for next page
+          const hasNextPage = await page.evaluate(() => {
+            return (
+              document.querySelector('[data-cy="pagination.next-page"]') !==
+                null ||
+              document.querySelector('[aria-label="następna strona"]') !==
+                null ||
+              document.querySelector('[aria-label="Next page"]') !== null
+            );
+          });
+
+          return { offers, hasNextPage };
+        });
+
+        if (result.offers.length > 0) {
           this.logger.log(
             `Otodom ${workerType} page ${String(pageNumber)} found ${String(result.offers.length)} offers`,
           );
@@ -316,44 +268,5 @@ export class ScraperThreadManagerService {
     this.logger.log(
       `Otodom ${workerType} worker completed: processed ${String(pageNumber - 1)} pages`,
     );
-  }
-
-  private async queueOffer(offerUrl: string, priority = 1, isNew = false) {
-    try {
-      const offerType = isNew ? "NEW" : "EXISTING";
-
-      const isOtodom = offerUrl.includes("otodom.pl");
-      let targetQueue: Queue;
-      let queueName: string;
-
-      if (isOtodom) {
-        targetQueue = isNew ? this.otodomNewQueue : this.otodomExistingQueue;
-        queueName = isNew ? "otodom-new" : "otodom-existing";
-      } else {
-        targetQueue = isNew ? this.olxNewQueue : this.olxExistingQueue;
-        queueName = isNew ? "olx-new" : "olx-existing";
-      }
-
-      const job = await targetQueue.add(
-        "processOffer",
-        { url: offerUrl, isNew },
-        {
-          priority,
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            delay: isNew ? 1000 : 2000,
-          },
-          removeOnComplete: false,
-        },
-      );
-
-      this.logger.debug(
-        `Queued ${offerType} job ID: ${job.id ?? "unknown"} to ${queueName} with priority ${String(priority)} for URL: ${offerUrl}`,
-      );
-    } catch (error) {
-      this.logger.error(`Failed to queue job for ${offerUrl}:`, error);
-      throw error;
-    }
   }
 }

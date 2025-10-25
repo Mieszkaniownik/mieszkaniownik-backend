@@ -9,6 +9,7 @@ import { NotificationProcessor } from "./notification.processor";
 import { NotificationService } from "./notification.service";
 import { DiscordService } from "./services/discord.service";
 import { EmailService } from "./services/email.service";
+import { OAuthRefreshService } from "./services/oauth-refresh.service";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { EmailService } from "./services/email.service";
     EmailService,
     DiscordService,
     NotificationProcessor,
+    OAuthRefreshService,
   ],
   exports: [NotificationService],
 })

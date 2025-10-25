@@ -1,0 +1,42 @@
+{{- if .Values.backendConfig.enabled }}
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ include "mieszkaniownik-backend.fullname" . }}-backend-config
+  labels:
+    {{- include "mieszkaniownik-backend.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.backendConfig.cdn.enabled }}
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: {{ .Values.backendConfig.cdn.cachePolicy.includeHost }}
+      includeProtocol: {{ .Values.backendConfig.cdn.cachePolicy.includeProtocol }}
+      includeQueryString: {{ .Values.backendConfig.cdn.cachePolicy.includeQueryString }}
+    negativeCaching: {{ .Values.backendConfig.cdn.negativeCaching }}
+    {{- if .Values.backendConfig.cdn.negativeCachingPolicy }}
+    negativeCachingPolicy:
+      {{- toYaml .Values.backendConfig.cdn.negativeCachingPolicy | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.backendConfig.iap.enabled }}
+  iap:
+    enabled: true
+    oauthclientCredentials:
+      secretName: {{ .Values.backendConfig.iap.secretName }}
+  {{- end }}
+  sessionAffinity:
+    affinityType: {{ .Values.backendConfig.sessionAffinity.affinityType | quote }}
+    affinityCookieTtlSec: {{ .Values.backendConfig.sessionAffinity.affinityCookieTtlSec }}
+  timeoutSec: {{ .Values.backendConfig.timeoutSec }}
+  connectionDraining:
+    drainingTimeoutSec: {{ .Values.backendConfig.connectionDraining.drainingTimeoutSec }}
+  healthCheck:
+    checkIntervalSec: {{ .Values.backendConfig.healthCheck.checkIntervalSec }}
+    timeoutSec: {{ .Values.backendConfig.healthCheck.timeoutSec }}
+    healthyThreshold: {{ .Values.backendConfig.healthCheck.healthyThreshold }}
+    unhealthyThreshold: {{ .Values.backendConfig.healthCheck.unhealthyThreshold }}
+    type: {{ .Values.backendConfig.healthCheck.type }}
+    requestPath: {{ .Values.backendConfig.healthCheck.requestPath }}
+    port: {{ .Values.backendConfig.healthCheck.port }}
+{{- end }}

@@ -4,13 +4,14 @@ import type { SentMessageInfo } from "nodemailer";
 import { Injectable, Logger } from "@nestjs/common";
 
 import { generateMatchNotificationTemplate } from "../dto/match-notification.template";
+import { OAuthRefreshService } from "./oauth-refresh.service";
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private transporter: nodemailer.Transporter | null = null;
 
-  constructor() {
+  constructor(private readonly oauthRefreshService: OAuthRefreshService) {
     void this.initializeTransporter();
   }
 
@@ -28,6 +29,8 @@ export class EmailService {
         process.env.EMAIL_OAUTH_USER !== undefined &&
         process.env.EMAIL_OAUTH_USER !== ""
       ) {
+        const accessToken = await this.oauthRefreshService.getAccessToken();
+
         emailConfig = {
           service: "gmail",
           auth: {
@@ -36,12 +39,18 @@ export class EmailService {
             clientId: process.env.EMAIL_OAUTH_CLIENT_ID,
             clientSecret: process.env.EMAIL_OAUTH_CLIENT_SECRET,
             refreshToken: process.env.EMAIL_OAUTH_REFRESH_TOKEN,
-            accessToken: process.env.EMAIL_OAUTH_ACCESS_TOKEN,
+            accessToken: accessToken ?? process.env.EMAIL_OAUTH_ACCESS_TOKEN,
           },
         };
         this.logger.log(
           `Using Gmail OAuth2 authentication for ${process.env.EMAIL_OAUTH_USER}`,
         );
+
+        if (accessToken === null) {
+          this.logger.warn(
+            "Failed to get fresh OAuth access token, using stored token (may be expired)",
+          );
+        }
       } else if (
         process.env.OUTLOOK_CLIENT_ID !== undefined &&
         process.env.OUTLOOK_CLIENT_ID !== "" &&

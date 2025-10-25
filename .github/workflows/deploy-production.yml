@@ -1,0 +1,115 @@
+name: Deploy Backend to Production
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: mieszkaniownik-backend-cluster
+  GKE_ZONE: europe-west3-a
+  DEPLOYMENT_NAME: mieszkaniownik-backend
+  IMAGE: mieszkaniownik-backend
+  REGISTRY_HOSTNAME: europe-west3-docker.pkg.dev
+  REPOSITORY: mieszkaniownik-backend-repo
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker to use Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY_HOSTNAME }}
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
+            --zone ${{ env.GKE_ZONE }} \
+            --project ${{ env.PROJECT_ID }}
+
+      - name: Generate Prisma Client
+        run: |
+          npm ci
+          npx prisma generate
+
+      - name: Extract version from tag or commit
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${GITHUB_SHA::8}
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag "${{ env.REGISTRY_HOSTNAME }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.version.outputs.VERSION }}" \
+            --tag "${{ env.REGISTRY_HOSTNAME }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest" \
+            --build-arg NODE_ENV=production \
+            .
+
+      - name: Push Docker image to Artifact Registry
+        run: |
+          docker push "${{ env.REGISTRY_HOSTNAME }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.version.outputs.VERSION }}"
+          docker push "${{ env.REGISTRY_HOSTNAME }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.13.0"
+
+      - name: Deploy to GKE with Helm
+        run: |
+          helm upgrade --install ${{ env.DEPLOYMENT_NAME }} ./helm-chart-backend \
+            --namespace production \
+            --create-namespace \
+            --values ./helm-chart-backend/values.yaml \
+            --values ./helm-chart-backend/values-prod.yaml \
+            --set image.repository="${{ env.REGISTRY_HOSTNAME }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}" \
+            --set image.tag="${{ steps.version.outputs.VERSION }}" \
+            --set postgresql.auth.password="${{ secrets.DB_PASSWORD }}" \
+            --set secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
+            --set secrets.googleClientId="${{ secrets.GOOGLE_CLIENT_ID }}" \
+            --set secrets.googleClientSecret="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+            --wait \
+            --timeout 10m
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n production --timeout=5m
+          kubectl get services -n production
+          kubectl get ingress -n production
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Backend deployment successful to production!"
+            echo "Version: ${{ steps.version.outputs.VERSION }}"
+            echo "URL: https://api.mieszkaniownik.wsparcie.dev"
+          else
+            echo "Backend deployment failed!"
+          fi
