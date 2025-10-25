@@ -14,6 +14,31 @@ options:
   logging: CLOUD_LOGGING_ONLY
   dynamicSubstitutions: true
 
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/database-url-prod/versions/latest
+      env: "DATABASE_URL"
+    - versionName: projects/$PROJECT_ID/secrets/jwt-secret-prod/versions/latest
+      env: "JWT_SECRET"
+    - versionName: projects/$PROJECT_ID/secrets/google-client-id-prod/versions/latest
+      env: "GOOGLE_CLIENT_ID"
+    - versionName: projects/$PROJECT_ID/secrets/google-client-secret-prod/versions/latest
+      env: "GOOGLE_CLIENT_SECRET"
+    - versionName: projects/$PROJECT_ID/secrets/email-oauth-user-prod/versions/latest
+      env: "EMAIL_OAUTH_USER"
+    - versionName: projects/$PROJECT_ID/secrets/email-oauth-client-id-prod/versions/latest
+      env: "EMAIL_OAUTH_CLIENT_ID"
+    - versionName: projects/$PROJECT_ID/secrets/email-oauth-client-secret-prod/versions/latest
+      env: "EMAIL_OAUTH_CLIENT_SECRET"
+    - versionName: projects/$PROJECT_ID/secrets/email-oauth-refresh-token-prod/versions/latest
+      env: "EMAIL_OAUTH_REFRESH_TOKEN"
+    - versionName: projects/$PROJECT_ID/secrets/redis-password-prod/versions/latest
+      env: "REDIS_PASSWORD"
+    - versionName: projects/$PROJECT_ID/secrets/google-ai-api-key-prod/versions/latest
+      env: "GOOGLE_AI_API_KEY"
+    - versionName: projects/$PROJECT_ID/secrets/google-maps-api-key-backend-prod/versions/latest
+      env: "GOOGLE_MAPS_API_KEY"
+
 steps:
   - name: "node:20-alpine"
     id: "install-and-test"
@@ -76,6 +101,18 @@ steps:
 
   - name: "gcr.io/$PROJECT_ID/helm"
     id: "helm-deploy"
+    secretEnv:
+      - "DATABASE_URL"
+      - "JWT_SECRET"
+      - "GOOGLE_CLIENT_ID"
+      - "GOOGLE_CLIENT_SECRET"
+      - "EMAIL_OAUTH_USER"
+      - "EMAIL_OAUTH_CLIENT_ID"
+      - "EMAIL_OAUTH_CLIENT_SECRET"
+      - "EMAIL_OAUTH_REFRESH_TOKEN"
+      - "REDIS_PASSWORD"
+      - "GOOGLE_AI_API_KEY"
+      - "GOOGLE_MAPS_API_KEY"
     entrypoint: "sh"
     args:
       - "-c"
@@ -86,6 +123,17 @@ steps:
           --set backend.image.repository=${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME} \
           --set backend.image.tag=${_IMAGE_TAG} \
           --set global.imageRegistry="" \
+          --set backend.env.DATABASE_URL="$$DATABASE_URL" \
+          --set backend.env.JWT_SECRET="$$JWT_SECRET" \
+          --set backend.env.GOOGLE_CLIENT_ID="$$GOOGLE_CLIENT_ID" \
+          --set backend.env.GOOGLE_CLIENT_SECRET="$$GOOGLE_CLIENT_SECRET" \
+          --set backend.env.EMAIL_OAUTH_USER="$$EMAIL_OAUTH_USER" \
+          --set backend.env.EMAIL_OAUTH_CLIENT_ID="$$EMAIL_OAUTH_CLIENT_ID" \
+          --set backend.env.EMAIL_OAUTH_CLIENT_SECRET="$$EMAIL_OAUTH_CLIENT_SECRET" \
+          --set backend.env.EMAIL_OAUTH_REFRESH_TOKEN="$$EMAIL_OAUTH_REFRESH_TOKEN" \
+          --set backend.env.REDIS_PASSWORD="$$REDIS_PASSWORD" \
+          --set backend.env.GOOGLE_AI_API_KEY="$$GOOGLE_AI_API_KEY" \
+          --set backend.env.GOOGLE_MAPS_API_KEY="$$GOOGLE_MAPS_API_KEY" \
           --values ./helm-chart-backend/values-${BRANCH_NAME}.yaml \
           --wait \
           --timeout 10m \
