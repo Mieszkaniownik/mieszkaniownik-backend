@@ -66,4 +66,10 @@ export class RegisterDto {
   @IsString()
   @MaxLength(255)
   googleId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  discordId?: string;
 }

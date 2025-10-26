@@ -10,6 +10,7 @@ import { JwtService } from "@nestjs/jwt";
 import { RegisterDto } from "../user/dto/register.dto";
 import { UserResponseDto } from "../user/dto/user-response.dto";
 import { UserService } from "../user/user.service";
+import { DiscordUser } from "./dto/discord-user.interface";
 import { GoogleUser } from "./dto/google-user.interface";
 import { ResponseDto } from "./dto/response.dto";
 
@@ -148,6 +149,59 @@ export class AuthService {
       }
       console.error("Google authentication error:", error);
       throw new UnauthorizedException("Google authentication failed");
+    }
+  }
+
+  async discordLogin(discordUser: DiscordUser): Promise<ResponseDto> {
+    try {
+      const user = await this.userService
+        .findOne(discordUser.email)
+        .catch(() => null);
+
+      if (user === null) {
+        const registerDto: RegisterDto = {
+          email: discordUser.email,
+          name: discordUser.name,
+          surname: discordUser.surname,
+          username: discordUser.username,
+          discordId: discordUser.discordId,
+          password: "",
+        };
+
+        const newUser = await this.userService.createDiscordUser(registerDto);
+
+        const payload = {
+          email: newUser.email,
+          sub: newUser.email,
+          role: newUser.role,
+        };
+        const token = this.jwtService.sign(payload);
+        return { token };
+      }
+
+      if (user.discordId === null || user.discordId === "") {
+        await this.userService.updateDiscordId(
+          user.email,
+          discordUser.discordId,
+        );
+      }
+
+      if (!user.active) {
+        throw new UnauthorizedException("User account is disabled");
+      }
+
+      const payload = { email: user.email, sub: user.email, role: user.role };
+      const token = this.jwtService.sign(payload);
+      return { token };
+    } catch (error) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+      console.error("Discord authentication error:", error);
+      throw new UnauthorizedException("Discord authentication failed");
     }
   }
 }

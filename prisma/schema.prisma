@@ -95,6 +95,7 @@ model User {
   updatedAt DateTime @updatedAt @db.Timestamptz
   lastLogin DateTime @default(now()) @db.Timestamptz
   googleId  String?  @unique @db.VarChar(255)
+  discordId String?  @unique @db.VarChar(255)
 
   alerts        Alert[]
   notifications Notification[]

@@ -25,6 +25,8 @@ docs/
 helm-chart-backend/
 terraform/
 .github/
-*.png
+/banner.png
+/logo.png
+/api.png
 *.jpg
 *.gif

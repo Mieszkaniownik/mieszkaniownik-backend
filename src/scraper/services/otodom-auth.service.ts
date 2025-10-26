@@ -135,6 +135,10 @@ export class OtodomAuthService implements OnModuleInit {
       browser = await puppeteer.launch({
         headless: true,
         executablePath: "/usr/bin/chromium",
+        ignoreDefaultArgs: [
+          "--enable-automation",
+          "--enable-blink-features=IdleDetection",
+        ],
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -142,6 +146,13 @@ export class OtodomAuthService implements OnModuleInit {
           "--disable-web-security",
           "--window-size=1920,1080",
           "--disable-blink-features=AutomationControlled",
+          "--disable-dev-shm-usage",
+          "--disable-breakpad",
+          "--disable-crash-reporter",
+          "--crash-dumps-dir=/tmp",
+          "--single-process",
+          "--no-zygote",
+          "--enable-crashpad=false",
         ],
       });
 

@@ -32,12 +32,17 @@ export class UserService {
         city: registerDto.city,
         role: Role.USER,
         googleId: registerDto.googleId,
+        discordId: registerDto.discordId,
       },
     });
     return userToMetadata(user);
   }
 
   async createGoogleUser(registerDto: RegisterDto): Promise<UserResponseDto> {
+    return this.create(registerDto);
+  }
+
+  async createDiscordUser(registerDto: RegisterDto): Promise<UserResponseDto> {
     return this.create(registerDto);
   }
 
@@ -52,9 +57,26 @@ export class UserService {
     return userToMetadata(user);
   }
 
+  async updateDiscordId(
+    email: string,
+    discordId: string,
+  ): Promise<UserResponseDto> {
+    const user = await this.database.user.update({
+      where: { email },
+      data: { discordId },
+    });
+    return userToMetadata(user);
+  }
+
   async findByGoogleId(googleId: string): Promise<User | null> {
     return this.database.user.findUnique({
       where: { googleId },
+    });
+  }
+
+  async findByDiscordId(discordId: string): Promise<User | null> {
+    return this.database.user.findUnique({
+      where: { discordId },
     });
   }
 

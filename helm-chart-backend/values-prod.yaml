@@ -10,52 +10,52 @@ backend:
     tag: "v1.0.0"
     pullPolicy: IfNotPresent
 
+  service:
+    type: NodePort
+
   env:
     NODE_ENV: production
     LOG_LEVEL: "warn"
     ENABLE_SWAGGER: "false"
     CORS_ORIGIN: "https://mieszkaniownik.wsparcie.dev,https://app.mieszkaniownik.wsparcie.dev"
+    FRONTEND_URL: "https://mieszkaniownik.wsparcie.dev"
+    GOOGLE_CALLBACK_URL: "https://api.mieszkaniownik.wsparcie.dev/auth/google/callback"
+    DISCORD_CALLBACK_URL: "https://api.mieszkaniownik.wsparcie.dev/auth/discord/callback"
+    PUPPETEER_HEADLESS: "true"
+    PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium"
+    CHROME_BIN: "/usr/bin/chromium"
+    USE_SCRAPER_THREADS: "true"
+    SCRAPER_ENABLED: "true"
+    POSTGRES_HOST: "10.97.0.3"
+    POSTGRES_PORT: "5432"
+    REDIS_HOST: "10.102.249.180"
+    REDIS_PORT: "6379"
 
   resources:
     requests:
-      cpu: 200m
-      memory: 512Mi
+      cpu: 8000m
+      memory: 4Gi
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 160000m
+      memory: 8Gi
 
 postgresql:
-  enabled: true
-  primary:
-    persistence:
-      enabled: true
-      size: 20Gi
-      storageClass: "ssd"
-    resources:
-      requests:
-        cpu: 500m
-        memory: 512Mi
-      limits:
-        cpu: 1000m
-        memory: 1Gi
-    service:
-      annotations:
-        service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+  enabled: false
+
+externalDatabase:
+  host: "10.97.0.3"
+  port: 5432
+  database: "mieszkaniownik"
+  user: "mieszkaniownik_user"
+  url: "postgresql://mieszkaniownik_user:8p7zmTxdnQVF6%2FzcDBXr4y4wxBCi2Pl1m9s0i3SR2FI%3D@10.97.0.3:5432/mieszkaniownik?sslmode=require"
 
 redis:
-  enabled: true
-  master:
-    persistence:
-      enabled: true
-      size: 8Gi
-      storageClass: "ssd"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
+  enabled: false
+
+externalRedis:
+  host: "10.102.249.180"
+  port: 6379
+  url: "redis://10.102.249.180:6379"
 
 databaseJobs:
   migrate:
@@ -70,6 +70,8 @@ secrets:
     JWT_SECRET: ""
     GOOGLE_CLIENT_ID: ""
     GOOGLE_CLIENT_SECRET: ""
+    DISCORD_CLIENT_ID: ""
+    DISCORD_CLIENT_SECRET: ""
     DISCORD_WEBHOOK_URL: ""
     EMAIL_USER: ""
     EMAIL_PASS: ""
@@ -90,7 +92,7 @@ config:
       enabled: true
 
 ingress:
-  enabled: true
+  enabled: false
   className: "gce"
   annotations:
     kubernetes.io/ingress.class: "gce"
@@ -98,7 +100,6 @@ ingress:
     networking.gke.io/managed-certificates: "mieszkaniownik-backend-cert"
     kubernetes.io/ingress.allow-http: "true"
     cloud.google.com/neg: '{"ingress": true}'
-    cloud.google.com/backend-config: "mieszkaniownik-backend-backend-config"
   hosts:
     - host: mieszkaniownik.wsparcie.dev
       paths:
@@ -114,24 +115,26 @@ ingress:
 
 autoscaling:
   enabled: true
-  minReplicas: 3
-  maxReplicas: 15
-  targetCPUUtilizationPercentage: 70
-  targetMemoryUtilizationPercentage: 80
+  minReplicas: 2
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 100
+  targetMemoryUtilizationPercentage: 100
 
 podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 1001
-  fsGroup: 1001
+  runAsNonRoot: false
+  runAsUser: 0
+  fsGroup: 0
 
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: false
-  runAsNonRoot: true
-  runAsUser: 1001
+  runAsNonRoot: false
+  runAsUser: 0
   capabilities:
+    add:
+      - SYS_ADMIN
     drop:
-      - ALL
+      - NET_RAW
 
 networkPolicy:
   enabled: true
@@ -155,7 +158,7 @@ cronJobs:
     suspend: false
 
 backendConfig:
-  enabled: true
+  enabled: false
   cdn:
     enabled: true
     cachePolicy:

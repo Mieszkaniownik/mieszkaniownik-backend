@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mieszkaniownik-backend
+  namespace: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mieszkaniownik-backend
+  template:
+    metadata:
+      labels:
+        app: mieszkaniownik-backend
+    spec:
+      containers:
+      - name: backend
+        image: europe-west3-docker.pkg.dev/mieszkaniownik/mieszkaniownik-repo/mieszkaniownik-backend:latest
+        ports:
+        - containerPort: 5001
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5001"
+        - name: DATABASE_URL
+          value: "postgresql://mieszkaniownik_user:8p7zmTxdnQVF6/zcDBXr4y4wxBCi2Pl1m9s0i3SR2FI=@127.0.0.1:5432/mieszkaniownik?sslmode=require"
+        - name: POSTGRES_HOST
+          value: "127.0.0.1"
+        - name: REDIS_HOST
+          value: "10.102.249.180"
+        - name: REDIS_PORT
+          value: "6379"
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+        args:
+          - "--private-ip"
+          - "mieszkaniownik:europe-central2:mieszkaniownik-prod-db"
+        securityContext:
+          runAsNonRoot: true
