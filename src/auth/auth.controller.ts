@@ -160,4 +160,68 @@ export class AuthController {
       response.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }
   }
+
+  @Get("discord/available")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Check if Discord OAuth is available",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Discord OAuth availability status",
+  })
+  discordAvailable() {
+    const isAvailable =
+      process.env.DISCORD_CLIENT_ID !== undefined &&
+      process.env.DISCORD_CLIENT_ID !== "" &&
+      process.env.DISCORD_CLIENT_SECRET !== undefined &&
+      process.env.DISCORD_CLIENT_SECRET !== "";
+    return { available: isAvailable };
+  }
+
+  @Get("discord")
+  @UseGuards(AuthGuard("discord"))
+  @ApiOperation({
+    summary: "Initiate Discord OAuth login",
+  })
+  @ApiResponse({
+    status: 302,
+    description: "Redirects to Discord OAuth",
+  })
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  async discordAuth() {}
+
+  @Get("discord/callback")
+  @UseGuards(AuthGuard("discord"))
+  @ApiOperation({
+    summary: "Handle Discord OAuth callback",
+  })
+  @ApiResponse({
+    status: 302,
+    description: "Redirects to frontend with token or error",
+  })
+  async discordAuthRedirect(
+    @Req() request: Request & { user: unknown },
+    @Res() response: Response,
+  ) {
+    try {
+      const discordUser = request.user as {
+        discordId: string;
+        email: string;
+        name?: string;
+        surname?: string;
+        username?: string;
+        avatar?: string;
+      };
+
+      const result = await this.authService.discordLogin(discordUser);
+
+      const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+      response.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
+    } catch (error) {
+      console.error("Discord auth error:", error);
+      const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+      response.redirect(`${frontendUrl}/login?error=oauth_failed`);
+    }
+  }
 }

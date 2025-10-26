@@ -27,8 +27,5 @@ fi
 
 echo "Database ready!"
 
-echo "Generating Prisma Client..."
-npx prisma generate
-
 echo "Starting application..."
 exec "$@"

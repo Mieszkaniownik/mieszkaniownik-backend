@@ -144,6 +144,10 @@ export class BrowserSetupService implements OnModuleDestroy {
       const browser = await puppeteer.launch({
         headless: true,
         executablePath: "/usr/bin/chromium",
+        ignoreDefaultArgs: [
+          "--enable-automation",
+          "--enable-blink-features=IdleDetection",
+        ],
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -171,9 +175,11 @@ export class BrowserSetupService implements OnModuleDestroy {
           "--disable-background-timer-throttling",
           "--disable-backgrounding-occluded-windows",
           "--disable-breakpad",
+          "--disable-crash-reporter",
+          "--crash-dumps-dir=/tmp",
           "--disable-component-update",
           "--disable-domain-reliability",
-          "--disable-features=TranslateUI,BlinkGenPropertyTrees",
+          "--disable-features=TranslateUI,BlinkGenPropertyTrees,Reporting",
           "--disable-hang-monitor",
           "--disable-prompt-on-repost",
           "--disable-sync",
@@ -181,6 +187,7 @@ export class BrowserSetupService implements OnModuleDestroy {
           "--mute-audio",
           "--no-default-browser-check",
           "--safebrowsing-disable-auto-update",
+          "--enable-crashpad=false",
         ],
 
         protocolTimeout: 60_000,

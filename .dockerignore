@@ -62,7 +62,7 @@ k8s-*.yaml
 # Terraform
 terraform/
 
-# Scripts (except docker-entrypoint.sh which is needed)
+# Scripts
 scripts/
 *.sh
 !docker-entrypoint.sh
@@ -83,6 +83,3 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
-
-# Prisma (migrations are copied separately if needed)
-prisma/migrations/

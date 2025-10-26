@@ -1,6 +1,6 @@
 apiVersion: v2
 name: mieszkaniownik-backend
-description: A Helm chart for Mieszkaniownik Backend - NestJS API with PostgreSQL and Redis
+description: A Helm chart for Mieszkaniownik Backend
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
@@ -25,12 +25,13 @@ keywords:
   - scraper
   - notifications
 
-dependencies:
-  - name: postgresql
-    version: "12.x.x"
-    repository: "https://charts.bitnami.com/bitnami"
-    condition: postgresql.enabled
-  - name: redis
-    version: "18.x.x"
-    repository: "https://charts.bitnami.com/bitnami"
-    condition: redis.enabled
+# Dependencies disabled for production - using Cloud SQL and Cloud Memorystore
+# dependencies:
+#   - name: postgresql
+#     version: "12.x.x"
+#     repository: "https://charts.bitnami.com/bitnami"
+#     condition: postgresql.enabled
+#   - name: redis
+#     version: "18.x.x"
+#     repository: "https://charts.bitnami.com/bitnami"
+#     condition: redis.enabled

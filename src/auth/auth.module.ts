@@ -6,6 +6,7 @@ import { DatabaseModule } from "../database/database.module";
 import { UserModule } from "../user/user.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
+import { DiscordStrategy } from "./strategies/discord.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 
@@ -13,6 +14,7 @@ const providers: (
   | typeof AuthService
   | typeof JwtStrategy
   | typeof GoogleStrategy
+  | typeof DiscordStrategy
 )[] = [AuthService, JwtStrategy];
 
 if (
@@ -23,6 +25,17 @@ if (
 } else {
   console.warn(
     "Google OAuth disabled: Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET",
+  );
+}
+
+if (
+  process.env.DISCORD_CLIENT_ID !== undefined &&
+  process.env.DISCORD_CLIENT_SECRET !== undefined
+) {
+  providers.push(DiscordStrategy);
+} else {
+  console.warn(
+    "Discord OAuth disabled: Missing DISCORD_CLIENT_ID or DISCORD_CLIENT_SECRET",
   );
 }
 
