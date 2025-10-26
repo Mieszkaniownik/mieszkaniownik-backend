@@ -25,6 +25,12 @@ availableSecrets:
       env: "GOOGLE_CLIENT_SECRET"
     - versionName: projects/$PROJECT_ID/secrets/google-callback-url-prod/versions/latest
       env: "GOOGLE_CALLBACK_URL"
+    - versionName: projects/$PROJECT_ID/secrets/discord-client-id-prod/versions/latest
+      env: "DISCORD_CLIENT_ID"
+    - versionName: projects/$PROJECT_ID/secrets/discord-client-secret-prod/versions/latest
+      env: "DISCORD_CLIENT_SECRET"
+    - versionName: projects/$PROJECT_ID/secrets/discord-callback-url-prod/versions/latest
+      env: "DISCORD_CALLBACK_URL"
     - versionName: projects/$PROJECT_ID/secrets/frontend-url-prod/versions/latest
       env: "FRONTEND_URL"
     - versionName: projects/$PROJECT_ID/secrets/cors-origin-prod/versions/latest
@@ -103,6 +109,9 @@ steps:
       - "GOOGLE_CLIENT_ID"
       - "GOOGLE_CLIENT_SECRET"
       - "GOOGLE_CALLBACK_URL"
+      - "DISCORD_CLIENT_ID"
+      - "DISCORD_CLIENT_SECRET"
+      - "DISCORD_CALLBACK_URL"
       - "FRONTEND_URL"
       - "CORS_ORIGIN"
       - "EMAIL_OAUTH_USER"
@@ -127,6 +136,9 @@ steps:
           --set backend.env.GOOGLE_CLIENT_ID="$$GOOGLE_CLIENT_ID" \
           --set backend.env.GOOGLE_CLIENT_SECRET="$$GOOGLE_CLIENT_SECRET" \
           --set backend.env.GOOGLE_CALLBACK_URL="$$GOOGLE_CALLBACK_URL" \
+          --set backend.env.DISCORD_CLIENT_ID="$$DISCORD_CLIENT_ID" \
+          --set backend.env.DISCORD_CLIENT_SECRET="$$DISCORD_CLIENT_SECRET" \
+          --set backend.env.DISCORD_CALLBACK_URL="$$DISCORD_CALLBACK_URL" \
           --set backend.env.FRONTEND_URL="$$FRONTEND_URL" \
           --set backend.env.CORS_ORIGIN="$$CORS_ORIGIN" \
           --set backend.env.EMAIL_OAUTH_USER="$$EMAIL_OAUTH_USER" \
