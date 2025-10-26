@@ -17,8 +17,8 @@ export class BrowserSetupService implements OnModuleDestroy {
 
   private olxBrowsers = new Set<Browser>();
   private otodomBrowsers = new Set<Browser>();
-  private readonly MAX_OLX_BROWSERS = 2;
-  private readonly MAX_OTODOM_BROWSERS = 2;
+  private readonly MAX_OLX_BROWSERS = 1;
+  private readonly MAX_OTODOM_BROWSERS = 1;
   private olxBrowserQueue: (() => void)[] = [];
   private otodomBrowserQueue: (() => void)[] = [];
   private readonly BROWSER_CLOSE_TIMEOUT = 5000;

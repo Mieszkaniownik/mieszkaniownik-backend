@@ -7,7 +7,7 @@ import { BrowserSetupService } from "../services/browser-setup.service";
 import { OlxScraperService } from "../services/olx-scraper.service";
 
 @Processor("olx-new", {
-  concurrency: 3,
+  concurrency: 1,
   lockDuration: 120_000,
 })
 export class OlxNewProcessor extends WorkerHost implements OnModuleInit {

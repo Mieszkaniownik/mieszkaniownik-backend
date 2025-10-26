@@ -7,7 +7,7 @@ import { BrowserSetupService } from "../services/browser-setup.service";
 import { OtodomScraperService } from "../services/otodom-scraper.service";
 
 @Processor("otodom-new", {
-  concurrency: 3,
+  concurrency: 1,
   lockDuration: 120_000,
 })
 export class OtodomNewProcessor extends WorkerHost implements OnModuleInit {
