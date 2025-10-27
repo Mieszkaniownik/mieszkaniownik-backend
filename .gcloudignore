@@ -22,7 +22,6 @@ docs/
 !README.md
 .vscode/
 .idea/
-helm-chart-backend/
 terraform/
 .github/
 /banner.png
