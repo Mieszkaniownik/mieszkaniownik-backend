@@ -127,12 +127,12 @@ steps:
       - |
         echo "Starting Helm deployment..."
         echo "Release: ${_HELM_RELEASE_NAME}"
-        echo "Tag: ${_IMAGE_TAG}"
+        echo "Tag: $SHORT_SHA"
         helm upgrade --install ${_HELM_RELEASE_NAME} ./helm-chart-backend \
-          --namespace ${_NAMESPACE} \
+          --namespace=${_NAMESPACE} \
           --create-namespace \
           --set=backend.image.repository=${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME} \
-          --set=backend.image.tag=${_IMAGE_TAG} \
+          --set=backend.image.tag=$SHORT_SHA \
           --set=global.imageRegistry= \
           --set=backend.env.DATABASE_URL="$$DATABASE_URL" \
           --set=backend.env.JWT_SECRET="$$JWT_SECRET" \
