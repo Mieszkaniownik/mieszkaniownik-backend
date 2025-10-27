@@ -69,7 +69,7 @@ steps:
     args:
       - "build"
       - "-t"
-      - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}"
+      - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:$SHORT_SHA"
       - "-t"
       - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:latest"
       - "-t"
