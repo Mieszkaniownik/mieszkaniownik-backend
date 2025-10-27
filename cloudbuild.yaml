@@ -156,7 +156,6 @@ steps:
           --values=./helm-chart-backend/values-prod.yaml \
           --wait \
           --timeout=10m \
-          --atomic \
           --cleanup-on-fail
     waitFor: ["get-credentials"]
 
