@@ -4,7 +4,6 @@ substitutions:
   _ARTIFACT_REGISTRY: "europe-west3-docker.pkg.dev"
   _REPOSITORY: "mieszkaniownik-repo"
   _SERVICE_NAME: "mieszkaniownik-backend"
-  _IMAGE_TAG: "${SHORT_SHA}"
   _HELM_RELEASE_NAME: "mieszkaniownik-backend"
   _NAMESPACE: "production"
 
@@ -183,7 +182,7 @@ steps:
     waitFor: ["verify-deployment"]
 
 images:
-  - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}"
+  - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:$SHORT_SHA"
   - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:latest"
   - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:${BRANCH_NAME}-latest"
 
@@ -198,4 +197,4 @@ timeout: "1800s"
 tags:
   - "mieszkaniownik-backend"
   - "${BRANCH_NAME}"
-  - "${_IMAGE_TAG}"
+  - "$SHORT_SHA"
