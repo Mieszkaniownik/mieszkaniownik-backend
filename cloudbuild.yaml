@@ -134,6 +134,8 @@ steps:
           --create-namespace \
           --set=backend.image.repository=${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME} \
           --set=backend.image.tag=$SHORT_SHA \
+          --set=databaseJobs.migrate.image.repository=${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME} \
+          --set=databaseJobs.migrate.image.tag=$SHORT_SHA \
           --set=global.imageRegistry= \
           --set=backend.env.DATABASE_URL="$$DATABASE_URL" \
           --set=backend.env.JWT_SECRET="$$JWT_SECRET" \
