@@ -32,7 +32,7 @@
 
 [![Docker](https://img.shields.io/badge/Docker_Compose-2.x-2496ED?logo=docker)](https://www.docker.com/) [![Kubernetes](https://img.shields.io/badge/Kubernetes-1.x-326CE5?logo=kubernetes)](https://kubernetes.io/) [![Helm](https://img.shields.io/badge/Helm-3.x-0F1689?logo=helm)](https://helm.sh/) [![Nginx](https://img.shields.io/badge/Nginx-1.x-009639?logo=nginx)](https://nginx.org/) ![Terraform](https://img.shields.io/badge/Terraform-1.x-7B42BC?logo=terraform)
 
-[![Status](https://img.shields.io/badge/Status-Beta-orange)]() [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Alpha-yellow)]() [![License](https://img.shields.io/badge/License-AGPL3.0-white)](LICENSE)
 
 </div>
 
