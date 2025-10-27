@@ -144,7 +144,7 @@ steps:
           --set=backend.env.DISCORD_CLIENT_SECRET="$$DISCORD_CLIENT_SECRET" \
           --set=backend.env.DISCORD_CALLBACK_URL="$$DISCORD_CALLBACK_URL" \
           --set=backend.env.FRONTEND_URL="$$FRONTEND_URL" \
-          --set=backend.env.CORS_ORIGIN="$$CORS_ORIGIN" \
+          --set=backend.env.CORS_ORIGIN="{$$CORS_ORIGIN}" \
           --set=backend.env.EMAIL_OAUTH_USER="$$EMAIL_OAUTH_USER" \
           --set=backend.env.EMAIL_OAUTH_CLIENT_ID="$$EMAIL_OAUTH_CLIENT_ID" \
           --set=backend.env.EMAIL_OAUTH_CLIENT_SECRET="$$EMAIL_OAUTH_CLIENT_SECRET" \
