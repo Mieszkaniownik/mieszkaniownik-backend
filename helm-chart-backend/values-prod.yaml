@@ -60,6 +60,7 @@ externalRedis:
 databaseJobs:
   migrate:
     enabled: true
+    command: ["npx", "prisma", "migrate", "deploy"]
   seed:
     enabled: false
 
