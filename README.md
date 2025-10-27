@@ -421,7 +421,7 @@ graph TB
     SP --> BP
 ```
 
-## Database Schema
+## Database Schema on [drawSQL](https://drawsql.app/teams/wsparcie/diagrams/mieszkaniownik/draw)
 
 ```mermaid
 erDiagram
