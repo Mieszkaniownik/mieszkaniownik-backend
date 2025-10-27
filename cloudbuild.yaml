@@ -154,8 +154,7 @@ steps:
           --set=backend.env.GOOGLE_AI_API_KEY="$$GOOGLE_AI_API_KEY" \
           --set=backend.env.GOOGLE_MAPS_API_KEY="$$GOOGLE_MAPS_API_KEY" \
           --values=./helm-chart-backend/values-prod.yaml \
-          --wait \
-          --timeout=10m \
+          --timeout=5m \
           --cleanup-on-fail
     waitFor: ["get-credentials"]
 
