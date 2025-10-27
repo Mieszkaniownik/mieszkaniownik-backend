@@ -128,6 +128,8 @@ steps:
         echo "Starting Helm deployment..."
         echo "Release: ${_HELM_RELEASE_NAME}"
         echo "Tag: $SHORT_SHA"
+        echo "Namespace: ${_NAMESPACE}"
+        set -x
         helm upgrade --install ${_HELM_RELEASE_NAME} ./helm-chart-backend \
           --namespace=${_NAMESPACE} \
           --create-namespace \
