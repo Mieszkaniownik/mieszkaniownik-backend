@@ -39,7 +39,8 @@ spec:
         - name: migrate
           image: "{{ .Values.global.imageRegistry }}{{ .Values.databaseJobs.migrate.image.repository }}:{{ .Values.databaseJobs.migrate.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.databaseJobs.migrate.image.pullPolicy }}
-          command: {{ .Values.databaseJobs.migrate.command }}
+          command:
+            {{- toYaml .Values.databaseJobs.migrate.command | nindent 12 }}
           env:
             - name: DATABASE_URL
               value: {{ include "mieszkaniownik-backend.databaseUrl" . | quote }}
@@ -83,7 +84,8 @@ spec:
         - name: seed
           image: "{{ .Values.global.imageRegistry }}{{ .Values.databaseJobs.seed.image.repository }}:{{ .Values.databaseJobs.seed.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.databaseJobs.seed.image.pullPolicy }}
-          command: {{ .Values.databaseJobs.seed.command }}
+          command:
+            {{- toYaml .Values.databaseJobs.seed.command | nindent 12 }}
           env:
             - name: DATABASE_URL
               value: {{ include "mieszkaniownik-backend.databaseUrl" . | quote }}
