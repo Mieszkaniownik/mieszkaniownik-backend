@@ -1,9 +1,7 @@
-# Compiled output
 /dist
 /node_modules
 /build
 
-# Logs
 logs
 *.log
 npm-debug.log*
@@ -12,14 +10,11 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
 .DS_Store
 
-# Tests
 /coverage
 /.nyc_output
 
-# IDEs and editors
 /.idea
 .project
 .classpath
@@ -28,14 +23,12 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 
-# IDE - VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
 .env
 .env.development.local
 .env.test.local
@@ -44,23 +37,18 @@ lerna-debug.log*
 .env.*.local
 .env.secret
 
-# temp directory
 .temp
 .tmp
 
-# Runtime data
 pids
 *.pid
 *.seed
 *.pid.lock
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
 
-# Deployment and Infrastructure
-# Terraform
 terraform/.terraform/
 terraform/.terraform.lock.hcl
 terraform/terraform.tfstate
@@ -74,39 +62,31 @@ terraform/*_override.tf.json
 terraform/.terraform.tfstate.lock.info
 terraform/tfplan
 
-# GCP credentials
 gcp-credentials/
 service-account-key.json
 google-credentials.json
 
-# Kubernetes secrets
 k8s-secrets/
 *.secret.yaml
 *-secret.yaml
 
-# Helm
 helm-chart-backend/charts/
 helm-chart-backend/*.tgz
 helm-chart-backend/values-local.yaml
 helm-chart-backend/Chart.lock
 
-# Prisma
 prisma/*.db
 prisma/*.db-journal
 
-# Docker
 docker-compose.override.yml
 .dockerignore.local
 
-# Cloud Build
 .cloudbuild/
 cloudbuild-local.yaml
 
-# Monitoring & Observability
 grafana-data/
 prometheus-data/
 
-# Backups
 backups/
 *.sql.gz
 *.dump

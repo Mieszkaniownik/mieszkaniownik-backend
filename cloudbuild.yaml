@@ -4,7 +4,6 @@ substitutions:
   _ARTIFACT_REGISTRY: "europe-west3-docker.pkg.dev"
   _REPOSITORY: "mieszkaniownik-repo"
   _SERVICE_NAME: "mieszkaniownik-backend"
-  _IMAGE_TAG: "${SHORT_SHA}"
   _HELM_RELEASE_NAME: "mieszkaniownik-backend"
   _NAMESPACE: "production"
 
@@ -70,7 +69,7 @@ steps:
     args:
       - "build"
       - "-t"
-      - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}"
+      - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:$SHORT_SHA"
       - "-t"
       - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:latest"
       - "-t"
@@ -125,33 +124,37 @@ steps:
     args:
       - "-c"
       - |
+        echo "Starting Helm deployment..."
+        echo "Release: ${_HELM_RELEASE_NAME}"
+        echo "Tag: $SHORT_SHA"
+        echo "Namespace: ${_NAMESPACE}"
+        set -x
         helm upgrade --install ${_HELM_RELEASE_NAME} ./helm-chart-backend \
-          --namespace ${_NAMESPACE} \
+          --namespace=${_NAMESPACE} \
           --create-namespace \
-          --set backend.image.repository=${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME} \
-          --set backend.image.tag=${_IMAGE_TAG} \
-          --set global.imageRegistry="" \
-          --set backend.env.DATABASE_URL="$$DATABASE_URL" \
-          --set backend.env.JWT_SECRET="$$JWT_SECRET" \
-          --set backend.env.GOOGLE_CLIENT_ID="$$GOOGLE_CLIENT_ID" \
-          --set backend.env.GOOGLE_CLIENT_SECRET="$$GOOGLE_CLIENT_SECRET" \
-          --set backend.env.GOOGLE_CALLBACK_URL="$$GOOGLE_CALLBACK_URL" \
-          --set backend.env.DISCORD_CLIENT_ID="$$DISCORD_CLIENT_ID" \
-          --set backend.env.DISCORD_CLIENT_SECRET="$$DISCORD_CLIENT_SECRET" \
-          --set backend.env.DISCORD_CALLBACK_URL="$$DISCORD_CALLBACK_URL" \
-          --set backend.env.FRONTEND_URL="$$FRONTEND_URL" \
-          --set backend.env.CORS_ORIGIN="$$CORS_ORIGIN" \
-          --set backend.env.EMAIL_OAUTH_USER="$$EMAIL_OAUTH_USER" \
-          --set backend.env.EMAIL_OAUTH_CLIENT_ID="$$EMAIL_OAUTH_CLIENT_ID" \
-          --set backend.env.EMAIL_OAUTH_CLIENT_SECRET="$$EMAIL_OAUTH_CLIENT_SECRET" \
-          --set backend.env.EMAIL_OAUTH_REFRESH_TOKEN="$$EMAIL_OAUTH_REFRESH_TOKEN" \
-          --set backend.env.REDIS_PASSWORD="$$REDIS_PASSWORD" \
-          --set backend.env.GOOGLE_AI_API_KEY="$$GOOGLE_AI_API_KEY" \
-          --set backend.env.GOOGLE_MAPS_API_KEY="$$GOOGLE_MAPS_API_KEY" \
-          --values ./helm-chart-backend/values-prod.yaml \
-          --wait \
-          --timeout 10m \
-          --atomic \
+          --set=backend.image.repository=${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME} \
+          --set=backend.image.tag=$SHORT_SHA \
+          --set=databaseJobs.migrate.image.repository=${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME} \
+          --set=databaseJobs.migrate.image.tag=$SHORT_SHA \
+          --set=global.imageRegistry= \
+          --set=backend.env.JWT_SECRET="$$JWT_SECRET" \
+          --set=backend.env.GOOGLE_CLIENT_ID="$$GOOGLE_CLIENT_ID" \
+          --set=backend.env.GOOGLE_CLIENT_SECRET="$$GOOGLE_CLIENT_SECRET" \
+          --set=backend.env.GOOGLE_CALLBACK_URL="$$GOOGLE_CALLBACK_URL" \
+          --set=backend.env.DISCORD_CLIENT_ID="$$DISCORD_CLIENT_ID" \
+          --set=backend.env.DISCORD_CLIENT_SECRET="$$DISCORD_CLIENT_SECRET" \
+          --set=backend.env.DISCORD_CALLBACK_URL="$$DISCORD_CALLBACK_URL" \
+          --set=backend.env.FRONTEND_URL="$$FRONTEND_URL" \
+          --set=backend.env.CORS_ORIGIN="{$$CORS_ORIGIN}" \
+          --set=backend.env.EMAIL_OAUTH_USER="$$EMAIL_OAUTH_USER" \
+          --set=backend.env.EMAIL_OAUTH_CLIENT_ID="$$EMAIL_OAUTH_CLIENT_ID" \
+          --set=backend.env.EMAIL_OAUTH_CLIENT_SECRET="$$EMAIL_OAUTH_CLIENT_SECRET" \
+          --set=backend.env.EMAIL_OAUTH_REFRESH_TOKEN="$$EMAIL_OAUTH_REFRESH_TOKEN" \
+          --set=backend.env.REDIS_PASSWORD="$$REDIS_PASSWORD" \
+          --set=backend.env.GOOGLE_AI_API_KEY="$$GOOGLE_AI_API_KEY" \
+          --set=backend.env.GOOGLE_MAPS_API_KEY="$$GOOGLE_MAPS_API_KEY" \
+          --values=./helm-chart-backend/values-prod.yaml \
+          --timeout=5m \
           --cleanup-on-fail
     waitFor: ["get-credentials"]
 
@@ -178,7 +181,7 @@ steps:
     waitFor: ["verify-deployment"]
 
 images:
-  - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}"
+  - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:$SHORT_SHA"
   - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:latest"
   - "${_ARTIFACT_REGISTRY}/$PROJECT_ID/${_REPOSITORY}/${_SERVICE_NAME}:${BRANCH_NAME}-latest"
 
@@ -193,4 +196,4 @@ timeout: "1800s"
 tags:
   - "mieszkaniownik-backend"
   - "${BRANCH_NAME}"
-  - "${_IMAGE_TAG}"
+  - "$SHORT_SHA"

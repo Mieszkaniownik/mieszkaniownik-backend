@@ -24,6 +24,10 @@ EMAIL_OAUTH_CLIENT_ID=$(get_secret "email-oauth-client-id-prod")
 EMAIL_OAUTH_CLIENT_SECRET=$(get_secret "email-oauth-client-secret-prod")
 EMAIL_OAUTH_REFRESH_TOKEN=$(get_secret "email-oauth-refresh-token-prod")
 
+DISCORD_CLIENT_ID=$(get_secret "discord-client-id-prod")
+DISCORD_CLIENT_SECRET=$(get_secret "discord-client-secret-prod")
+DISCORD_CALLBACK_URL=$(get_secret "discord-callback-url-prod")
+
 echo "Updating deployment with secrets..."
 
 kubectl set env deployment/$DEPLOYMENT -n $NAMESPACE \
@@ -36,6 +40,9 @@ kubectl set env deployment/$DEPLOYMENT -n $NAMESPACE \
   EMAIL_OAUTH_CLIENT_ID="$EMAIL_OAUTH_CLIENT_ID" \
   EMAIL_OAUTH_CLIENT_SECRET="$EMAIL_OAUTH_CLIENT_SECRET" \
   EMAIL_OAUTH_REFRESH_TOKEN="$EMAIL_OAUTH_REFRESH_TOKEN" \
+  DISCORD_CLIENT_ID="$DISCORD_CLIENT_ID" \
+  DISCORD_CLIENT_SECRET="$DISCORD_CLIENT_SECRET" \
+  DISCORD_CALLBACK_URL="$DISCORD_CALLBACK_URL" \
   EMAIL_OAUTH_TYPE="OAuth2" \
   NOTIFICATIONS_ENABLED="true" \
   EMAIL_SERVICE_ENABLED="true"

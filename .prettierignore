@@ -1,15 +1,10 @@
-# Helm templates
 helm-chart-backend/
 
-# Build output
 dist/
 build/
 
-# Dependencies
 node_modules/
 
-# Logs
 *.log
 
-# Prisma
 prisma/migrations/

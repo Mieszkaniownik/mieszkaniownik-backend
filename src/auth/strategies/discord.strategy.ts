@@ -1,12 +1,21 @@
-import type { Profile } from "passport-discord";
-import { Strategy } from "passport-discord";
+import { Strategy as OAuth2Strategy } from "passport-oauth2";
 import type { VerifyCallback } from "passport-oauth2";
 
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 
+interface DiscordProfile {
+  id: string;
+  username: string;
+  email?: string;
+  avatar?: string;
+  global_name?: string;
+  discriminator: string;
+  verified?: boolean;
+}
+
 @Injectable()
-export class DiscordStrategy extends PassportStrategy(Strategy, "discord") {
+export class DiscordStrategy extends PassportStrategy(OAuth2Strategy, "discord") {
   constructor() {
     const clientID = process.env.DISCORD_CLIENT_ID;
     const clientSecret = process.env.DISCORD_CLIENT_SECRET;
@@ -23,6 +32,8 @@ export class DiscordStrategy extends PassportStrategy(Strategy, "discord") {
     }
 
     super({
+      authorizationURL: "https://discord.com/api/oauth2/authorize",
+      tokenURL: "https://discord.com/api/oauth2/token",
       clientID,
       clientSecret,
       callbackURL:
@@ -32,23 +43,35 @@ export class DiscordStrategy extends PassportStrategy(Strategy, "discord") {
     });
   }
 
-  validate(
+  async validate(
     accessToken: string,
     refreshToken: string,
-    profile: Profile,
+    _profile: unknown,
     done: VerifyCallback,
-  ): void {
+  ): Promise<void> {
     try {
-      const id = profile.id;
-      const username = profile.username;
-      const email = profile.email;
-      const avatar = profile.avatar;
+      const response = await fetch("https://discord.com/api/users/@me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-      const globalName = profile.global_name;
+      if (!response.ok) {
+        throw new Error(`Discord API error: ${response.statusText}`);
+      }
+
+      const discordProfile = (await response.json()) as DiscordProfile;
+
+      const id = discordProfile.id;
+      const username = discordProfile.username;
+      const email = discordProfile.email;
+      const avatar = discordProfile.avatar;
+
+      const globalName = discordProfile.global_name;
       let name: string | undefined;
       let surname: string | undefined;
 
-      if (globalName !== null) {
+      if (globalName !== undefined && globalName !== "") {
         const nameParts = globalName.split(" ");
         name = nameParts[0];
         surname =

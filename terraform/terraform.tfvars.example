@@ -1,5 +1,4 @@
 # Example Terraform variables file
-# Copy this file to terraform.tfvars and fill in the values
 
 project_id   = "your-gcp-project-id"
 project_name = "mieszkaniownik-backend"

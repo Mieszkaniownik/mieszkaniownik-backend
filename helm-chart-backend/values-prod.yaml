@@ -33,11 +33,11 @@ backend:
 
   resources:
     requests:
-      cpu: 8000m
-      memory: 4Gi
+      cpu: 500m
+      memory: 2Gi
     limits:
-      cpu: 160000m
-      memory: 8Gi
+      cpu: 2000m
+      memory: 4Gi
 
 postgresql:
   enabled: false
@@ -60,6 +60,7 @@ externalRedis:
 databaseJobs:
   migrate:
     enabled: true
+    command: ["npx", "prisma", "migrate", "deploy"]
   seed:
     enabled: false
 
