@@ -181,12 +181,10 @@ export class ScraperProcessor {
         );
         let dateText = createdAtElement?.textContent.trim() ?? "";
         let createdAt: string | null = null;
-        const dateDebug: string[] = [];
-
-        dateDebug.push(
+        const dateDebug: string[] = [
           "=== DATE EXTRACTION DEBUG ===",
           `Date element found: ${String(createdAtElement !== null)}`,
-        );
+        ];
 
         if (createdAtElement === null) {
           dateDebug.push("Trying alternative selectors...");
@@ -709,8 +707,7 @@ export class ScraperProcessor {
           .slice(0, 10);
 
         let views = 0;
-        const viewsDebug: string[] = [];
-        viewsDebug.push("=== OTODOM VIEWS EXTRACTION DEBUG ===");
+        const viewsDebug: string[] = ["=== OTODOM VIEWS EXTRACTION DEBUG ==="];
 
         const viewsElement = document.querySelector(
           ".css-lcnm6u.e3km50a2, .e3km50a2",
@@ -800,8 +797,7 @@ export class ScraperProcessor {
         viewsDebug.push(`=== FINAL VIEWS: ${String(views)} ===`);
 
         let createdAt: string | null = null;
-        const dateDebug: string[] = [];
-        dateDebug.push("=== OTODOM DATE EXTRACTION DEBUG ===");
+        const dateDebug: string[] = ["=== OTODOM DATE EXTRACTION DEBUG ==="];
 
         const historyRows = document.querySelectorAll(
           ".css-17wo1v5.etrn3wv7, .etrn3wv7",

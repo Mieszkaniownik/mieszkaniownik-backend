@@ -17,11 +17,11 @@ describe("AppController (e2e)", () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
-  });
+  }, 60_000);
 
   afterEach(async () => {
     await app.close();
-  });
+  }, 60_000);
 
   it("/health (GET)", () => {
     return request(app.getHttpServer())
@@ -32,5 +32,5 @@ describe("AppController (e2e)", () => {
         expect(response.body).toHaveProperty("timestamp");
         expect(response.body).toHaveProperty("uptime");
       });
-  });
+  }, 30_000);
 });

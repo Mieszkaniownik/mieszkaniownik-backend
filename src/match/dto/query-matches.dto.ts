@@ -18,6 +18,7 @@ export class QueryMatchesDto {
   @ApiPropertyOptional({
     description: "Sort matches by field",
     enum: MatchSortBy,
+    enumName: "MatchSortBy",
     default: MatchSortBy.NEWEST,
   })
   @IsOptional()

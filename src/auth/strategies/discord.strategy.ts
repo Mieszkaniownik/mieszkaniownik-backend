@@ -15,7 +15,10 @@ interface DiscordProfile {
 }
 
 @Injectable()
-export class DiscordStrategy extends PassportStrategy(OAuth2Strategy, "discord") {
+export class DiscordStrategy extends PassportStrategy(
+  OAuth2Strategy,
+  "discord",
+) {
   constructor() {
     const clientID = process.env.DISCORD_CLIENT_ID;
     const clientSecret = process.env.DISCORD_CLIENT_SECRET;

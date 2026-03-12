@@ -15,6 +15,7 @@ export class QueryAlertsDto {
   @ApiPropertyOptional({
     description: "Filter by alert status",
     enum: AlertStatus,
+    enumName: "AlertStatus",
   })
   @IsOptional()
   @IsEnum(AlertStatus)
@@ -23,6 +24,7 @@ export class QueryAlertsDto {
   @ApiPropertyOptional({
     description: "Sort alerts by field",
     enum: AlertSortBy,
+    enumName: "AlertSortBy",
     default: AlertSortBy.NEWEST,
   })
   @IsOptional()

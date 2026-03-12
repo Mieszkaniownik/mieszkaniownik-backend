@@ -197,9 +197,9 @@ export class OAuthRefreshService {
   isConfigured(): boolean {
     return Boolean(
       this.oauth2Client &&
-        process.env.EMAIL_OAUTH_CLIENT_ID &&
-        process.env.EMAIL_OAUTH_CLIENT_SECRET &&
-        process.env.EMAIL_OAUTH_REFRESH_TOKEN,
+      process.env.EMAIL_OAUTH_CLIENT_ID &&
+      process.env.EMAIL_OAUTH_CLIENT_SECRET &&
+      process.env.EMAIL_OAUTH_REFRESH_TOKEN,
     );
   }
 

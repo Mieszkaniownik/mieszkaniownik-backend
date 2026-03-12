@@ -38,6 +38,8 @@ lerna-debug.log*
 .env.secret
 
 .temp
+
+debug/
 .tmp
 
 pids
